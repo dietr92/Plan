@@ -393,54 +393,56 @@ function Planning({
   return (
     <div className="space-y-5">
       <ScreenIntro screen="planning" />
-      <div className="grid gap-5 xl:grid-cols-[380px_minmax(0,1fr)]">
-      <Panel title={entryDraft.id ? 'Planning bijwerken' : 'Tijdblok toevoegen'}>
-        <form onSubmit={submitEntry} className="space-y-3">
-          <Field label="Project">
-            <select className="field" value={entryDraft.projectId} onChange={(event) => setEntryDraft({ ...entryDraft, projectId: event.target.value })} required>
-              {state.projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <button type="button" className="text-sm font-bold text-app-navy underline decoration-app-blue underline-offset-4" onClick={quickProject}>
-            Snel demo-project toevoegen
-          </button>
-          <Field label="Titel">
-            <input className="field" value={entryDraft.title} onChange={(event) => setEntryDraft({ ...entryDraft, title: event.target.value })} placeholder="Workshop, bouwblok, review..." />
-          </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Datum">
-              <input className="field" type="date" value={entryDraft.date} onChange={(event) => setEntryDraft({ ...entryDraft, date: event.target.value })} />
-            </Field>
-            <Field label="Factureerbaar">
-              <select className="field" value={entryDraft.billable ? 'yes' : 'no'} onChange={(event) => setEntryDraft({ ...entryDraft, billable: event.target.value === 'yes' })}>
-                <option value="yes">Ja</option>
-                <option value="no">Nee</option>
+      <div className="grid min-w-0 gap-5 2xl:grid-cols-[340px_minmax(0,1fr)]">
+        <Panel title={entryDraft.id ? 'Planning bijwerken' : 'Tijdblok toevoegen'}>
+          <form onSubmit={submitEntry} className="grid gap-3 md:grid-cols-2 2xl:block 2xl:space-y-3">
+            <Field label="Project">
+              <select className="field" value={entryDraft.projectId} onChange={(event) => setEntryDraft({ ...entryDraft, projectId: event.target.value })} required>
+                {state.projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
               </select>
             </Field>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Start">
-              <input className="field" type="time" value={entryDraft.startTime} onChange={(event) => setEntryDraft({ ...entryDraft, startTime: event.target.value })} />
+            <Field label="Titel">
+              <input className="field" value={entryDraft.title} onChange={(event) => setEntryDraft({ ...entryDraft, title: event.target.value })} placeholder="Workshop, bouwblok, review..." />
             </Field>
-            <Field label="Einde">
-              <input className="field" type="time" value={entryDraft.endTime} onChange={(event) => setEntryDraft({ ...entryDraft, endTime: event.target.value })} />
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Datum">
+                <input className="field" type="date" value={entryDraft.date} onChange={(event) => setEntryDraft({ ...entryDraft, date: event.target.value })} />
+              </Field>
+              <Field label="Factureerbaar">
+                <select className="field" value={entryDraft.billable ? 'yes' : 'no'} onChange={(event) => setEntryDraft({ ...entryDraft, billable: event.target.value === 'yes' })}>
+                  <option value="yes">Ja</option>
+                  <option value="no">Nee</option>
+                </select>
+              </Field>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Start">
+                <input className="field" type="time" value={entryDraft.startTime} onChange={(event) => setEntryDraft({ ...entryDraft, startTime: event.target.value })} />
+              </Field>
+              <Field label="Einde">
+                <input className="field" type="time" value={entryDraft.endTime} onChange={(event) => setEntryDraft({ ...entryDraft, endTime: event.target.value })} />
+              </Field>
+            </div>
+            <Field label="Notitie">
+              <textarea className="field min-h-20 resize-none" value={entryDraft.notes} onChange={(event) => setEntryDraft({ ...entryDraft, notes: event.target.value })} />
             </Field>
-          </div>
-          <Field label="Notitie">
-            <textarea className="field min-h-20 resize-none" value={entryDraft.notes} onChange={(event) => setEntryDraft({ ...entryDraft, notes: event.target.value })} />
-          </Field>
-          <button className="btn-primary w-full" type="submit">
-            <Plus size={17} /> {entryDraft.id ? 'Bijwerken' : 'Toevoegen'}
-          </button>
-        </form>
-      </Panel>
+            <div className="flex flex-col justify-end gap-3">
+              <button type="button" className="text-left text-sm font-bold text-app-navy underline decoration-app-blue underline-offset-4" onClick={quickProject}>
+                Snel demo-project toevoegen
+              </button>
+              <button className="btn-primary w-full" type="submit">
+                <Plus size={17} /> {entryDraft.id ? 'Bijwerken' : 'Toevoegen'}
+              </button>
+            </div>
+          </form>
+        </Panel>
 
-      <section className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <section className="min-w-0 space-y-4">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="font-display text-2xl font-black tracking-normal">Mei 2026</h2>
             <p className="text-sm text-app-muted">Drag-free MVP: plannen via het formulier, wijzigen via de blokken.</p>
@@ -451,18 +453,18 @@ function Planning({
           </div>
         </div>
 
-        <div className={mode === 'week' ? 'grid gap-3 lg:grid-cols-7' : 'grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7'}>
+        <div className={mode === 'week' ? 'grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7' : 'grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7'}>
           {days.map((day) => {
             const key = toDateKey(day)
             const entries = state.timeEntries.filter((entry) => entry.date === key).sort((a, b) => a.startTime.localeCompare(b.startTime))
             return (
-              <article key={key} className="app-panel min-h-[178px] rounded-2xl p-3">
+              <article key={key} className="app-panel min-w-0 rounded-2xl p-3 xl:min-h-[178px]">
                 <div className="mb-3 flex items-center justify-between gap-2">
-                  <div>
+                  <div className="min-w-0">
                     <p className="app-caption text-app-muted">{day.toLocaleDateString('nl-BE', { weekday: 'short' })}</p>
                     <h3 className="font-display text-xl font-black">{day.getDate()}</h3>
                   </div>
-                  <span className="rounded-full bg-app-blue/16 px-2.5 py-1 text-xs font-bold">{formatHours(entries.reduce((sum, entry) => sum + entry.hours, 0))}</span>
+                  <span className="shrink-0 rounded-full bg-app-blue/16 px-2.5 py-1 text-xs font-bold">{formatHours(entries.reduce((sum, entry) => sum + entry.hours, 0))}</span>
                 </div>
                 <div className="space-y-2">
                   {entries.map((entry) => {
