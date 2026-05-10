@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm'
-import { seedState } from '@/src/demo-data'
-import type { PlanState, Project, TimeEntry } from '@/src/types'
+import { seedState } from '../../demo-data'
+import type { PlanState, Project, TimeEntry } from '../../types'
 import { db } from './client'
 import { projects, timeEntries, workspaceMembers, workspaces } from './schema'
 
