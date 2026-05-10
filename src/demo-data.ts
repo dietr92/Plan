@@ -1,0 +1,111 @@
+import type { PlanState, Project } from './types'
+
+const now = new Date().toISOString()
+
+export const projectColors = ['#0B2038', '#86AAC4', '#F2D88B', '#52667A', '#A76E2D', '#D8C7AA']
+
+export const emptyProject = (): Omit<Project, 'id' | 'createdAt' | 'updatedAt'> => ({
+  name: '',
+  client: '',
+  status: 'planned',
+  type: 'hourly',
+  color: projectColors[0],
+  deadline: '',
+  estimatedHours: 24,
+  rate: 95,
+  budget: 0,
+})
+
+export const seedState: PlanState = {
+  projects: [
+    {
+      id: 'proj-production-planning',
+      name: 'Productieplanning sprint',
+      client: 'Verduyn Foods',
+      status: 'active',
+      type: 'hourly',
+      color: '#0B2038',
+      deadline: '2026-05-22',
+      estimatedHours: 42,
+      rate: 105,
+      budget: 0,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'proj-stock-rollout',
+      name: 'Stock scanflow rollout',
+      client: 'Vandermarliere',
+      status: 'active',
+      type: 'fixed',
+      color: '#86AAC4',
+      deadline: '2026-05-28',
+      estimatedHours: 36,
+      rate: 95,
+      budget: 5200,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'proj-internal',
+      name: 'Appetite demo assets',
+      client: 'Appetite',
+      status: 'planned',
+      type: 'internal',
+      color: '#F2D88B',
+      deadline: '2026-06-04',
+      estimatedHours: 18,
+      rate: 0,
+      budget: 0,
+      createdAt: now,
+      updatedAt: now,
+    },
+  ],
+  timeEntries: [
+    {
+      id: 'entry-1',
+      projectId: 'proj-production-planning',
+      title: 'Flowmapping met operations',
+      date: '2026-05-11',
+      startTime: '09:00',
+      endTime: '12:00',
+      hours: 3,
+      billable: true,
+      notes: 'Capaciteit en uitzonderingen uitgetekend.',
+    },
+    {
+      id: 'entry-2',
+      projectId: 'proj-stock-rollout',
+      title: 'Scannerfeedback verwerken',
+      date: '2026-05-12',
+      startTime: '13:00',
+      endTime: '16:30',
+      hours: 3.5,
+      billable: true,
+      notes: 'Mobiele flow verscherpt.',
+    },
+    {
+      id: 'entry-3',
+      projectId: 'proj-internal',
+      title: 'Plan screenshots voorbereiden',
+      date: '2026-05-13',
+      startTime: '10:00',
+      endTime: '12:00',
+      hours: 2,
+      billable: false,
+      notes: 'Nieuwe Appetite assets.',
+    },
+    {
+      id: 'entry-4',
+      projectId: 'proj-production-planning',
+      title: 'Weekplanning bouwen',
+      date: '2026-05-14',
+      startTime: '09:30',
+      endTime: '15:00',
+      hours: 5.5,
+      billable: true,
+      notes: 'MVP planning cockpit.',
+    },
+  ],
+}
+
