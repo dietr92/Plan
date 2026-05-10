@@ -56,6 +56,34 @@ const navItems: { id: Screen; label: string; icon: typeof LayoutDashboard }[] = 
   { id: 'settings', label: 'Data', icon: Settings },
 ]
 
+const screenMeta: Record<Screen, { eyebrow: string; title: string; text: string }> = {
+  dashboard: {
+    eyebrow: 'Planning cockpit',
+    title: 'Eén ritme voor projecten, uren en capaciteit.',
+    text: 'Een compact overzicht van planning, deadlines en projectwaarde voor dagelijkse opvolging.',
+  },
+  planning: {
+    eyebrow: 'Week en maand',
+    title: 'Plan werkblokken zonder kalendercomplexiteit.',
+    text: 'Voeg tijdblokken toe via het formulier en stuur de planning bij vanuit de blokken.',
+  },
+  projects: {
+    eyebrow: 'Project cockpit',
+    title: 'Projecten, budget en deadlines in één werkbeeld.',
+    text: 'Beheer klant, status, tarief, budget, planning en voortgang zonder aparte spreadsheet.',
+  },
+  reports: {
+    eyebrow: 'Rapportage',
+    title: 'Zie waar tijd en waarde naartoe gaan.',
+    text: 'Bundel factureerbare uren, projectstatus en omzetindicatie tot een bruikbaar rapport.',
+  },
+  settings: {
+    eyebrow: 'Beheer',
+    title: 'Data, demo en sessie onder controle.',
+    text: 'Exporteer, importeer of herstel data zonder database-instellingen in de browser te tonen.',
+  },
+}
+
 const defaultEntry = (projectId = ''): Omit<TimeEntry, 'id'> => ({
   projectId,
   title: '',
@@ -86,7 +114,7 @@ function App({ initialState, userEmail }: { initialState: PlanState; userEmail: 
       try {
         setState(await action())
       } catch (mutationError) {
-        setError(mutationError instanceof Error ? mutationError.message : 'Actie mislukt')
+        setError(mutationError instanceof Error ? String(mutationError).replace(/^Error: /, '') : 'Actie mislukt')
       }
     })
   }
@@ -125,30 +153,34 @@ function App({ initialState, userEmail }: { initialState: PlanState; userEmail: 
       <MobileTopBar menuOpen={menuOpen} onToggle={() => setMenuOpen((value) => !value)} />
       {menuOpen && <MobileMenu active={screen} onNavigate={changeScreen} />}
 
-      <div className="min-h-screen md:grid md:grid-cols-[248px_minmax(0,1fr)]">
-        <aside className="hidden border-r border-app-border bg-app-card md:flex md:flex-col">
-          <div className="border-b border-app-border px-5 py-5">
-            <PlanWordmark />
+      <div className="min-h-screen md:grid md:grid-cols-[272px_minmax(0,1fr)]">
+        <aside className="hidden bg-app-navy text-app-paper md:flex md:flex-col">
+          <div className="border-b border-app-paper/10 px-5 py-5">
+            <PlanWordmark reverse />
+            <p className="mt-4 max-w-44 text-xs leading-relaxed text-app-paper/58">Planning, projecten en uren in een rustige Appetite workflow.</p>
           </div>
           <nav className="flex-1 space-y-1 p-3" aria-label="Hoofdnavigatie">
             {navItems.map((item) => (
               <NavButton key={item.id} item={item} active={screen === item.id} onClick={() => changeScreen(item.id)} />
             ))}
           </nav>
-          <div className="border-t border-app-border p-4 text-xs text-app-muted">
-            <strong className="block text-app-navy">Postgres testversie</strong>
-            Data wordt veilig op de server bewaard.
+          <div className="m-3 rounded-xl border border-app-paper/12 bg-app-paper/7 p-4 text-xs text-app-paper/62">
+            <div className="mb-2 flex items-center gap-2 text-app-paper">
+              <span className="h-2 w-2 rounded-full bg-app-gold" />
+              <strong>Postgres live</strong>
+            </div>
+            Data wordt server-side bewaard voor {userEmail}.
           </div>
         </aside>
 
         <main className="min-w-0 pb-24 md:pb-0">
-          <header className="hidden h-16 items-center justify-between border-b border-app-border bg-app-paper/86 px-6 backdrop-blur md:flex">
+          <header className="hidden h-[74px] items-center justify-between border-b border-app-border bg-app-paper/78 px-7 backdrop-blur md:flex">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-app-muted">Plan by Appetite</p>
-              <h1 className="font-display text-xl font-black tracking-normal">{navItems.find((item) => item.id === screen)?.label}</h1>
+              <p className="app-caption text-app-muted">{screenMeta[screen].eyebrow}</p>
+              <h1 className="font-display text-2xl font-black tracking-normal">{navItems.find((item) => item.id === screen)?.label}</h1>
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-3 rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm">
+              <div className="flex items-center gap-3 rounded-full border border-app-border bg-app-card/82 px-4 py-2 text-sm shadow-soft">
                 <span className="h-2.5 w-2.5 rounded-full bg-app-gold" />
                 {formatHours(metrics.weekHours)} gepland deze week
               </div>
@@ -160,7 +192,7 @@ function App({ initialState, userEmail }: { initialState: PlanState; userEmail: 
             </div>
           </header>
 
-          <div className="mx-auto max-w-7xl px-4 py-5 md:px-6 md:py-7">
+          <div className="mx-auto max-w-[1480px] px-4 py-5 md:px-7 md:py-7">
             {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-800">{error}</div>}
             {isPending && <div className="mb-4 rounded-lg border border-app-blue/30 bg-app-blue/12 px-4 py-3 text-sm font-bold text-app-navy">Bezig met bewaren...</div>}
             {screen === 'dashboard' && <Dashboard state={state} metrics={metrics} onScreen={changeScreen} />}
@@ -204,9 +236,11 @@ function MobileTopBar({ menuOpen, onToggle }: { menuOpen: boolean; onToggle: () 
 function MobileMenu({ active, onNavigate }: { active: Screen; onNavigate: (screen: Screen) => void }) {
   return (
     <div className="fixed inset-x-0 top-16 z-50 border-b border-app-border bg-app-card p-3 shadow-app md:hidden">
-      {navItems.map((item) => (
-        <NavButton key={item.id} item={item} active={active === item.id} onClick={() => onNavigate(item.id)} />
-      ))}
+      <div className="grid grid-cols-5 gap-1">
+        {navItems.map((item) => (
+          <NavButton key={item.id} item={item} active={active === item.id} onClick={() => onNavigate(item.id)} mobile />
+        ))}
+      </div>
     </div>
   )
 }
@@ -242,7 +276,7 @@ function NavButton({
       type="button"
       onClick={onClick}
       className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-bold transition ${
-        active ? 'bg-app-navy text-app-paper' : 'text-app-muted hover:bg-app-blue/16 hover:text-app-navy'
+        active ? 'bg-app-paper text-app-navy shadow-soft' : 'text-app-paper/62 hover:bg-app-paper/8 hover:text-app-paper'
       }`}
     >
       <Icon size={19} />
@@ -254,28 +288,32 @@ function NavButton({
 function Dashboard({ state, metrics, onScreen }: { state: PlanState; metrics: ReturnType<typeof getMetrics>; onScreen: (screen: Screen) => void }) {
   return (
     <div className="space-y-5 md:space-y-7">
-      <section className="grid gap-4 rounded-xl border border-app-navy bg-app-navy p-5 text-app-paper shadow-app md:grid-cols-[1.35fr_.65fr] md:p-7">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-app-blue">Planning cockpit</p>
-          <h2 className="mt-3 max-w-3xl font-display text-3xl font-black leading-tight tracking-normal md:text-5xl">
-            Eén zicht op projecten, uren en capaciteit.
-          </h2>
-          <p className="mt-3 max-w-2xl text-app-paper/72">
-            Plan by Appetite houdt de eerste versie bewust compact: projecten, weekplanning, uren en rapportage in één beveiligde werkruimte.
-          </p>
-          <div className="mt-5 flex flex-wrap gap-2">
-            <button className="btn-primary bg-app-gold text-app-navy hover:bg-app-gold/90" onClick={() => onScreen('planning')}>
-              <Plus size={17} /> Uren plannen
-            </button>
-            <button className="btn-secondary border-app-paper/18 bg-white/7 text-app-paper hover:bg-white/12" onClick={() => onScreen('projects')}>
-              Project toevoegen
-            </button>
+      <section className="app-panel relative overflow-hidden rounded-2xl p-5 md:p-7">
+        <div className="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full bg-app-gold/28 blur-3xl" />
+        <div className="pointer-events-none absolute right-12 top-12 h-60 w-60 rounded-full bg-app-blue/24 blur-3xl" />
+        <div className="relative grid gap-5 md:grid-cols-[1.28fr_.72fr]">
+          <div>
+            <p className="app-caption text-app-blue">{screenMeta.dashboard.eyebrow}</p>
+            <h2 className="mt-3 max-w-3xl font-display text-3xl font-black leading-tight tracking-normal md:text-5xl">
+              {screenMeta.dashboard.title}
+            </h2>
+            <p className="mt-3 max-w-2xl text-app-muted">
+              {screenMeta.dashboard.text}
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <button className="btn-primary bg-app-gold text-app-navy hover:bg-app-gold/90" onClick={() => onScreen('planning')}>
+                <Plus size={17} /> Uren plannen
+              </button>
+              <button className="btn-secondary" onClick={() => onScreen('projects')}>
+                Project toevoegen
+              </button>
+            </div>
           </div>
-        </div>
-        <div className="grid gap-2 self-end">
-          <MiniMetric label="Vandaag" value={formatHours(metrics.todayHours)} />
-          <MiniMetric label="Deze week" value={formatHours(metrics.weekHours)} />
-          <MiniMetric label="Omzetindicatie" value={formatCurrency(metrics.revenue)} />
+          <div className="grid gap-2 self-end rounded-xl bg-app-navy p-3 text-app-paper shadow-app">
+            <MiniMetric label="Vandaag" value={formatHours(metrics.todayHours)} />
+            <MiniMetric label="Deze week" value={formatHours(metrics.weekHours)} />
+            <MiniMetric label="Omzetindicatie" value={formatCurrency(metrics.revenue)} />
+          </div>
         </div>
       </section>
 
@@ -353,7 +391,9 @@ function Planning({
   }
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
+    <div className="space-y-5">
+      <ScreenIntro screen="planning" />
+      <div className="grid gap-5 xl:grid-cols-[380px_minmax(0,1fr)]">
       <Panel title={entryDraft.id ? 'Planning bijwerken' : 'Tijdblok toevoegen'}>
         <form onSubmit={submitEntry} className="space-y-3">
           <Field label="Project">
@@ -416,26 +456,29 @@ function Planning({
             const key = toDateKey(day)
             const entries = state.timeEntries.filter((entry) => entry.date === key).sort((a, b) => a.startTime.localeCompare(b.startTime))
             return (
-              <article key={key} className="min-h-[170px] rounded-lg border border-app-border bg-app-card p-3 shadow-soft">
+              <article key={key} className="app-panel min-h-[178px] rounded-2xl p-3">
                 <div className="mb-3 flex items-center justify-between gap-2">
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-app-muted">{day.toLocaleDateString('nl-BE', { weekday: 'short' })}</p>
+                    <p className="app-caption text-app-muted">{day.toLocaleDateString('nl-BE', { weekday: 'short' })}</p>
                     <h3 className="font-display text-xl font-black">{day.getDate()}</h3>
                   </div>
-                  <span className="rounded-md bg-app-blue/16 px-2 py-1 text-xs font-bold">{formatHours(entries.reduce((sum, entry) => sum + entry.hours, 0))}</span>
+                  <span className="rounded-full bg-app-blue/16 px-2.5 py-1 text-xs font-bold">{formatHours(entries.reduce((sum, entry) => sum + entry.hours, 0))}</span>
                 </div>
                 <div className="space-y-2">
                   {entries.map((entry) => {
                     const project = state.projects.find((item) => item.id === entry.projectId)
+                    const selected = entryDraft.id === entry.id
                     return (
                       <button
                         key={entry.id}
                         type="button"
-                        className="w-full rounded-lg border border-app-border bg-app-paper p-2 text-left transition hover:border-app-blue"
+                        className={`w-full rounded-xl border p-2 text-left transition hover:border-app-blue ${
+                          selected ? 'border-app-navy bg-app-navy text-app-paper' : 'border-app-border bg-app-paper'
+                        }`}
                         onClick={() => setEntryDraft(entry)}
                       >
                         <span className="block truncate text-sm font-bold">{entry.title}</span>
-                        <span className="mt-1 flex items-center gap-2 text-xs text-app-muted">
+                        <span className={`mt-1 flex items-center gap-2 text-xs ${selected ? 'text-app-paper/70' : 'text-app-muted'}`}>
                           <i className="h-2 w-2 rounded-full" style={{ background: project?.color ?? '#86AAC4' }} />
                           {entry.startTime}-{entry.endTime}
                         </span>
@@ -452,6 +495,7 @@ function Planning({
           <EntryList entries={state.timeEntries} projects={state.projects} onEdit={(entry) => setEntryDraft(entry)} onDelete={onEntryDelete} empty="Nog geen planningblokken." />
         </Panel>
       </section>
+      </div>
     </div>
   )
 }
@@ -475,7 +519,9 @@ function Projects({ state, onSave, onDelete }: { state: PlanState; onSave: (proj
   }
 
   return (
-    <div className="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
+    <div className="space-y-5">
+      <ScreenIntro screen="projects" />
+      <div className="grid gap-5 xl:grid-cols-[380px_minmax(0,1fr)]">
       <Panel title={draft.id ? 'Project bijwerken' : 'Project toevoegen'}>
         <form onSubmit={submitProject} className="space-y-3">
           <Field label="Naam"><input className="field" value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} required /></Field>
@@ -522,12 +568,12 @@ function Projects({ state, onSave, onDelete }: { state: PlanState; onSave: (proj
           const hours = entries.reduce((sum, entry) => sum + entry.hours, 0)
           const pct = project.estimatedHours ? Math.min(100, (hours / project.estimatedHours) * 100) : 0
           return (
-            <article key={project.id} className="rounded-xl border border-app-border bg-app-card p-4 shadow-soft">
+            <article key={project.id} className="app-panel rounded-2xl p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="mb-2 flex items-center gap-2">
                     <span className="h-3 w-3 rounded-full" style={{ background: project.color }} />
-                    <span className="rounded-md bg-app-blue/16 px-2 py-1 text-xs font-bold">{statusLabels[project.status]}</span>
+                    <span className="rounded-full bg-app-blue/16 px-2.5 py-1 text-xs font-bold">{statusLabels[project.status]}</span>
                   </div>
                   <h3 className="truncate font-display text-xl font-black tracking-normal">{project.name}</h3>
                   <p className="text-sm text-app-muted">{project.client} · {typeLabels[project.type]}</p>
@@ -545,11 +591,15 @@ function Projects({ state, onSave, onDelete }: { state: PlanState; onSave: (proj
               <div className="mt-4 h-2 rounded-full bg-app-paper">
                 <div className="h-full rounded-full bg-app-blue" style={{ width: `${pct}%` }} />
               </div>
-              <p className="mt-3 text-sm text-app-muted">Deadline: {project.deadline || 'niet gezet'}</p>
+              <div className="mt-3 flex items-center justify-between gap-3 text-sm text-app-muted">
+                <span>Deadline: {project.deadline || 'niet gezet'}</span>
+                <span className="font-bold text-app-navy">{Math.round(pct)}%</span>
+              </div>
             </article>
           )
         })}
       </section>
+      </div>
     </div>
   )
 }
@@ -573,13 +623,15 @@ function Reports({ state }: { state: PlanState }) {
 
   return (
     <div className="space-y-5">
+      <ScreenIntro screen="reports" />
       <section className="grid gap-3 sm:grid-cols-3">
         <MetricCard icon={Clock3} label="Alle uren" value={formatHours(rows.reduce((sum, row) => sum + row.hours, 0))} helper="planning totaal" />
         <MetricCard icon={CheckCircle2} label="Factureerbaar" value={formatHours(rows.reduce((sum, row) => sum + row.billable, 0))} helper="uren met facturatie" />
         <MetricCard icon={BarChart3} label="Omzet" value={formatCurrency(totalRevenue)} helper="indicatief" />
       </section>
       <Panel title="Projectrapport">
-        <div className="mb-4 flex justify-end">
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <p className="max-w-xl text-sm leading-relaxed text-app-muted">Een compacte exportklare tabel met uren, factureerbare tijd en indicatieve projectwaarde.</p>
           <button className="btn-secondary" onClick={exportCsv}><Download size={17} /> CSV export</button>
         </div>
         <div className="overflow-x-auto">
@@ -596,9 +648,9 @@ function Reports({ state }: { state: PlanState }) {
             </thead>
             <tbody>
               {rows.map((row) => (
-                <tr key={row.project.id} className="border-b border-app-border/70">
+                <tr key={row.project.id} className="border-b border-app-border/70 transition hover:bg-app-paper/60">
                   <td className="py-3 font-bold">{row.project.name}<span className="block text-xs font-medium text-app-muted">{row.project.client}</span></td>
-                  <td>{statusLabels[row.project.status]}</td>
+                  <td><span className="rounded-full bg-app-blue/16 px-2.5 py-1 text-xs font-bold">{statusLabels[row.project.status]}</span></td>
                   <td>{typeLabels[row.project.type]}</td>
                   <td className="text-right">{formatHours(row.hours)}</td>
                   <td className="text-right">{formatHours(row.billable)}</td>
@@ -641,40 +693,64 @@ function DataSettings({
   }
 
   return (
-    <div className="grid gap-5 lg:grid-cols-2">
-      <Panel title="Data beheren">
-        <div className="grid gap-3">
-          <button className="btn-secondary justify-start" onClick={exportJson}><FileJson size={18} /> JSON exporteren</button>
-          <button className="btn-secondary justify-start" onClick={() => inputRef.current?.click()}><Upload size={18} /> JSON importeren</button>
-          <input
-            ref={inputRef}
-            type="file"
-            accept="application/json"
-            className="hidden"
-            onChange={(event) => importJson(event.target.files?.[0]).catch((error) => alert(error instanceof Error ? error.message : 'Import mislukt'))}
-          />
-          <button className="btn-secondary justify-start border-red-200 text-red-800 hover:bg-red-50" onClick={onRestoreDemo}>
-            <RefreshCcw size={18} /> Demo data herstellen
-          </button>
-        </div>
-      </Panel>
-      <Panel title="Opslag">
-        <div className="space-y-3 text-sm text-app-muted">
-          <p>Deze testversie gebruikt Postgres via server-side Next.js acties. De databaseverbinding blijft buiten de browser.</p>
-          <p>{state.projects.length} projecten en {state.timeEntries.length} planningblokken actief voor {userEmail}.</p>
-          <form action={logoutAction}>
-            <button className="btn-secondary justify-start"><LogOut size={18} /> Uitloggen</button>
-          </form>
-        </div>
-      </Panel>
+    <div className="space-y-5">
+      <ScreenIntro screen="settings" />
+      <div className="grid gap-5 lg:grid-cols-3">
+        <Panel title="Export en import">
+          <div className="space-y-3 text-sm text-app-muted">
+            <p>Neem een volledige JSON-kopie mee of importeer bestaande Plan-data naar deze werkruimte.</p>
+            <div className="grid gap-3">
+              <button className="btn-secondary justify-start" onClick={exportJson}><FileJson size={18} /> JSON exporteren</button>
+              <button className="btn-secondary justify-start" onClick={() => inputRef.current?.click()}><Upload size={18} /> JSON importeren</button>
+            </div>
+            <input
+              ref={inputRef}
+              type="file"
+              accept="application/json"
+              className="hidden"
+              onChange={(event) => importJson(event.target.files?.[0]).catch((error) => alert(error instanceof Error ? String(error).replace(/^Error: /, '') : 'Import mislukt'))}
+            />
+          </div>
+        </Panel>
+        <Panel title="Demo data">
+          <div className="space-y-3 text-sm text-app-muted">
+            <p>Herstel de voorbeeldprojecten en planningblokken wanneer je opnieuw met een zuivere demo wilt testen.</p>
+            <button className="btn-secondary justify-start border-red-200 text-red-800 hover:bg-red-50" onClick={onRestoreDemo}>
+              <RefreshCcw size={18} /> Demo data herstellen
+            </button>
+          </div>
+        </Panel>
+        <Panel title="Opslag en sessie">
+          <div className="space-y-3 text-sm text-app-muted">
+            <p>Postgres wordt enkel via server-side Next.js acties aangesproken; de databaseverbinding blijft buiten de browser.</p>
+            <p><strong className="text-app-navy">{state.projects.length}</strong> projecten en <strong className="text-app-navy">{state.timeEntries.length}</strong> planningblokken actief voor {userEmail}.</p>
+            <form action={logoutAction}>
+              <button className="btn-secondary justify-start"><LogOut size={18} /> Uitloggen</button>
+            </form>
+          </div>
+        </Panel>
+      </div>
     </div>
+  )
+}
+
+function ScreenIntro({ screen }: { screen: Screen }) {
+  const meta = screenMeta[screen]
+  return (
+    <section className="app-panel rounded-2xl px-5 py-4 md:px-6">
+      <p className="app-caption text-app-blue">{meta.eyebrow}</p>
+      <div className="mt-2 grid gap-2 md:grid-cols-[minmax(0,.86fr)_minmax(280px,.56fr)] md:items-end">
+        <h2 className="font-display text-2xl font-black leading-tight tracking-normal md:text-3xl">{meta.title}</h2>
+        <p className="text-sm leading-relaxed text-app-muted md:text-base">{meta.text}</p>
+      </div>
+    </section>
   )
 }
 
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="rounded-xl border border-app-border bg-app-card p-4 shadow-soft">
-      <h2 className="mb-4 font-display text-lg font-black tracking-normal">{title}</h2>
+    <section className="app-panel rounded-2xl p-4">
+      <h2 className="mb-4 font-display text-xl font-black tracking-normal">{title}</h2>
       {children}
     </section>
   )
@@ -683,7 +759,7 @@ function Panel({ title, children }: { title: string; children: ReactNode }) {
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <label className="block text-sm font-bold">
-      <span className="mb-1.5 block text-app-muted">{label}</span>
+      <span className="app-caption mb-2 block text-app-muted">{label}</span>
       {children}
     </label>
   )
@@ -691,12 +767,12 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 
 function MetricCard({ icon: Icon, label, value, helper }: { icon: typeof Clock3; label: string; value: string; helper: string }) {
   return (
-    <article className="rounded-xl border border-app-border bg-app-card p-4 shadow-soft">
-      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-app-blue/18 text-app-navy">
+    <article className="app-panel rounded-2xl p-4">
+      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-app-blue/18 text-app-navy">
         <Icon size={20} />
       </div>
-      <p className="text-sm font-bold text-app-muted">{label}</p>
-      <strong className="mt-1 block font-display text-2xl font-black tracking-normal">{value}</strong>
+      <p className="app-caption text-app-muted">{label}</p>
+      <strong className="mt-1 block font-display text-3xl font-black tracking-normal">{value}</strong>
       <p className="mt-1 text-xs text-app-muted">{helper}</p>
     </article>
   )
@@ -704,7 +780,7 @@ function MetricCard({ icon: Icon, label, value, helper }: { icon: typeof Clock3;
 
 function MiniMetric({ label, value, light = false }: { label: string; value: string; light?: boolean }) {
   return (
-    <div className={`rounded-lg border p-3 ${light ? 'border-app-border bg-app-paper/72' : 'border-app-paper/14 bg-white/7'}`}>
+    <div className={`rounded-xl border p-3 ${light ? 'border-app-border bg-app-paper/72' : 'border-app-paper/14 bg-white/7'}`}>
       <p className={`text-xs font-bold ${light ? 'text-app-muted' : 'text-app-paper/62'}`}>{label}</p>
       <strong className="mt-1 block font-display text-lg font-black tracking-normal">{value}</strong>
     </div>
@@ -730,7 +806,7 @@ function EntryList({
       {[...entries].sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`)).map((entry) => {
         const project = projects.find((item) => item.id === entry.projectId)
         return (
-          <div key={entry.id} className="flex items-center justify-between gap-3 rounded-lg border border-app-border bg-app-paper/70 p-3">
+          <div key={entry.id} className="flex items-center justify-between gap-3 rounded-xl border border-app-border bg-app-paper/70 p-3">
             <div className="min-w-0">
               <p className="truncate font-bold">{entry.title}</p>
               <p className="flex flex-wrap items-center gap-2 text-sm text-app-muted">
