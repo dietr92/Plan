@@ -165,18 +165,18 @@ function App({ initialState, userEmail }: { initialState: PlanState; userEmail: 
       {menuOpen && <MobileMenu active={screen} onNavigate={changeScreen} />}
 
       <div className="min-h-screen md:grid md:grid-cols-[272px_minmax(0,1fr)]">
-        <aside className="hidden bg-app-navy text-app-paper md:flex md:flex-col">
-          <div className="border-b border-app-paper/10 px-5 py-5">
-            <PlanWordmark reverse />
-            <p className="mt-4 max-w-44 text-xs leading-relaxed text-app-paper/58">Planning, projecten en uren in een rustige Appetite workflow.</p>
+        <aside className="hidden bg-app-blue text-app-navy md:flex md:flex-col">
+          <div className="border-b border-app-navy/12 px-5 py-5">
+            <PlanWordmark />
+            <p className="mt-4 max-w-44 text-xs font-medium leading-relaxed text-app-navy/68">Planning, projecten en uren in een rustige Appetite workflow.</p>
           </div>
           <nav className="flex-1 space-y-1 p-3" aria-label="Hoofdnavigatie">
             {navItems.map((item) => (
               <NavButton key={item.id} item={item} active={screen === item.id} onClick={() => changeScreen(item.id)} />
             ))}
           </nav>
-          <div className="m-3 rounded-xl border border-app-paper/12 bg-app-paper/7 p-4 text-xs text-app-paper/62">
-            <div className="mb-2 flex items-center gap-2 text-app-paper">
+          <div className="m-3 rounded-xl border border-app-navy/12 bg-app-paper/32 p-4 text-xs text-app-navy/68">
+            <div className="mb-2 flex items-center gap-2 text-app-navy">
               <span className="h-2 w-2 rounded-full bg-app-gold" />
               <strong>Postgres live</strong>
             </div>
@@ -287,7 +287,7 @@ function NavButton({
       type="button"
       onClick={onClick}
       className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-bold transition ${
-        active ? 'bg-app-paper text-app-navy shadow-soft' : 'text-app-paper/62 hover:bg-app-paper/8 hover:text-app-paper'
+        active ? 'bg-app-paper text-app-navy shadow-soft' : 'text-app-navy/68 hover:bg-app-paper/22 hover:text-app-navy'
       }`}
     >
       <Icon size={19} />
