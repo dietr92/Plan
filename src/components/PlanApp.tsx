@@ -64,8 +64,8 @@ const screenMeta: Record<Screen, { eyebrow: string; title: string; text: string 
   },
   planning: {
     eyebrow: 'Week en maand',
-    title: 'Plan werkblokken zonder kalendercomplexiteit.',
-    text: 'Voeg tijdblokken toe via het formulier en stuur de planning bij vanuit de blokken.',
+    title: 'Weekplanning',
+    text: 'Plan en wijzig tijdblokken vanuit één compact werkbeeld.',
   },
   projects: {
     eyebrow: 'Project cockpit',
@@ -405,7 +405,6 @@ function Planning({
 
   return (
     <div className="space-y-5">
-      <ScreenIntro screen="planning" />
       <div className="grid min-w-0 gap-5 min-[1380px]:grid-cols-[320px_minmax(0,1fr)]">
         <div className="order-2 min-[1380px]:order-1">
         <Panel title={entryDraft.id ? 'Planning bijwerken' : 'Tijdblok toevoegen'}>
@@ -457,10 +456,11 @@ function Planning({
         </div>
 
       <section className="order-1 min-w-0 space-y-4 min-[1380px]:order-2">
-        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
+        <div className="app-panel flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3">
           <div>
-            <h2 className="font-display text-2xl font-black tracking-normal">{planningAnchor.toLocaleDateString('nl-BE', { month: 'long', year: 'numeric' })}</h2>
-            <p className="text-sm text-app-muted">Drag-free MVP: plannen via het formulier, wijzigen via de blokken.</p>
+            <p className="app-caption text-app-blue">Week en maand</p>
+            <h2 className="font-display text-xl font-black tracking-normal md:text-2xl">{planningAnchor.toLocaleDateString('nl-BE', { month: 'long', year: 'numeric' })}</h2>
+            <p className="text-sm text-app-muted">Tijdblokken toevoegen, aanpassen en opvolgen.</p>
           </div>
           <div className="segmented">
             <button className={mode === 'week' ? 'active' : ''} onClick={() => setMode('week')}>Week</button>
