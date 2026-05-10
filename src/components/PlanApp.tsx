@@ -84,10 +84,10 @@ const screenMeta: Record<Screen, { eyebrow: string; title: string; text: string 
   },
 }
 
-const defaultEntry = (projectId = ''): Omit<TimeEntry, 'id'> => ({
+const defaultEntry = (projectId = '', date = todayKey()): Omit<TimeEntry, 'id'> => ({
   projectId,
   title: '',
-  date: todayKey(),
+  date,
   startTime: '09:00',
   endTime: '11:00',
   hours: 2,
@@ -120,6 +120,10 @@ function App({ initialState, userEmail }: { initialState: PlanState; userEmail: 
   }
 
   function deleteProject(projectId: string) {
+    const project = state.projects.find((item) => item.id === projectId)
+    const entryCount = state.timeEntries.filter((entry) => entry.projectId === projectId).length
+    const ok = window.confirm(`Verwijder ${project?.name ?? 'dit project'}${entryCount ? ` en ${entryCount} planningblok(ken)` : ''}?`)
+    if (!ok) return
     runMutation(() => deleteProjectAction(projectId))
   }
 
@@ -128,6 +132,9 @@ function App({ initialState, userEmail }: { initialState: PlanState; userEmail: 
   }
 
   function deleteEntry(entryId: string) {
+    const entry = state.timeEntries.find((item) => item.id === entryId)
+    const ok = window.confirm(`Verwijder planningblok "${entry?.title ?? 'zonder titel'}"?`)
+    if (!ok) return
     runMutation(() => deleteEntryAction(entryId))
   }
 
@@ -136,10 +143,14 @@ function App({ initialState, userEmail }: { initialState: PlanState; userEmail: 
   }
 
   function replaceState(nextState: PlanState) {
+    const ok = window.confirm('Importeer deze JSON en vervang de huidige Plan-data?')
+    if (!ok) return
     runMutation(() => replaceStateAction(nextState))
   }
 
   function restoreDemoData() {
+    const ok = window.confirm('Demo data herstellen? De huidige projecten en planningblokken worden vervangen.')
+    if (!ok) return
     runMutation(() => restoreDemoDataAction())
   }
 
@@ -182,7 +193,7 @@ function App({ initialState, userEmail }: { initialState: PlanState; userEmail: 
             <div className="flex items-center gap-2">
               <div className="flex items-center gap-3 rounded-full border border-app-border bg-app-card/82 px-4 py-2 text-sm shadow-soft">
                 <span className="h-2.5 w-2.5 rounded-full bg-app-gold" />
-                {formatHours(metrics.weekHours)} gepland deze week
+                {formatHours(metrics.weekHours)} gepland {metrics.weekLabel}
               </div>
               <form action={logoutAction}>
                 <button className="icon-btn" aria-label={`Uitloggen ${userEmail}`} title={userEmail}>
@@ -288,13 +299,13 @@ function NavButton({
 function Dashboard({ state, metrics, onScreen }: { state: PlanState; metrics: ReturnType<typeof getMetrics>; onScreen: (screen: Screen) => void }) {
   return (
     <div className="space-y-5 md:space-y-7">
-      <section className="app-panel relative overflow-hidden rounded-2xl p-5 md:p-7">
+      <section className="app-panel relative overflow-hidden rounded-2xl p-4 md:p-6">
         <div className="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full bg-app-gold/28 blur-3xl" />
         <div className="pointer-events-none absolute right-12 top-12 h-60 w-60 rounded-full bg-app-blue/24 blur-3xl" />
         <div className="relative grid gap-5 md:grid-cols-[1.28fr_.72fr]">
           <div>
             <p className="app-caption text-app-blue">{screenMeta.dashboard.eyebrow}</p>
-            <h2 className="mt-3 max-w-3xl font-display text-3xl font-black leading-tight tracking-normal md:text-5xl">
+            <h2 className="mt-3 max-w-3xl font-display text-3xl font-black leading-tight tracking-normal md:text-4xl">
               {screenMeta.dashboard.title}
             </h2>
             <p className="mt-3 max-w-2xl text-app-muted">
@@ -309,10 +320,12 @@ function Dashboard({ state, metrics, onScreen }: { state: PlanState; metrics: Re
               </button>
             </div>
           </div>
-          <div className="grid gap-2 self-end rounded-xl bg-app-navy p-3 text-app-paper shadow-app">
-            <MiniMetric label="Vandaag" value={formatHours(metrics.todayHours)} />
-            <MiniMetric label="Deze week" value={formatHours(metrics.weekHours)} />
-            <MiniMetric label="Omzetindicatie" value={formatCurrency(metrics.revenue)} />
+          <div className="grid grid-cols-2 gap-2 self-end rounded-xl bg-app-navy p-2 text-app-paper shadow-app md:grid-cols-1 md:p-3">
+            <MiniMetric label={metrics.todayEntries.length ? 'Vandaag' : 'Eerstvolgend'} value={formatHours(metrics.todayEntries.length ? metrics.todayHours : metrics.focusEntries.reduce((sum, entry) => sum + entry.hours, 0))} />
+            <MiniMetric label={`Week ${metrics.weekLabel}`} value={formatHours(metrics.weekHours)} />
+            <div className="col-span-2 md:col-span-1">
+              <MiniMetric label="Omzetindicatie" value={formatCurrency(metrics.revenue)} />
+            </div>
           </div>
         </div>
       </section>
@@ -320,7 +333,7 @@ function Dashboard({ state, metrics, onScreen }: { state: PlanState; metrics: Re
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard icon={FolderKanban} label="Actieve projecten" value={String(metrics.activeProjects)} helper={`${state.projects.length} totaal`} />
         <MetricCard icon={Clock3} label="Factureerbaar" value={formatHours(metrics.billableHours)} helper="op alle geplande entries" />
-        <MetricCard icon={CalendarDays} label="Weekplanning" value={formatHours(metrics.weekHours)} helper={`${metrics.weekEntries} blokken`} />
+        <MetricCard icon={CalendarDays} label="Weekplanning" value={formatHours(metrics.weekHours)} helper={`${metrics.weekEntries} blokken · ${metrics.weekLabel}`} />
         <MetricCard icon={BarChart3} label="Verwachte omzet" value={formatCurrency(metrics.revenue)} helper="regie + vaste prijs" />
       </section>
 
@@ -338,8 +351,8 @@ function Dashboard({ state, metrics, onScreen }: { state: PlanState; metrics: Re
             ))}
           </div>
         </Panel>
-        <Panel title="Vandaag">
-          <EntryList entries={metrics.todayEntries} projects={state.projects} empty="Geen planning voor vandaag." />
+        <Panel title={metrics.focusTitle}>
+          <EntryList entries={metrics.focusEntries} projects={state.projects} empty="Geen planning gevonden." />
         </Panel>
       </section>
     </div>
@@ -358,9 +371,9 @@ function Planning({
   onProjectCreate: (project: Project) => void
 }) {
   const [mode, setMode] = useState<'week' | 'month'>('week')
-  const [entryDraft, setEntryDraft] = useState<Omit<TimeEntry, 'id'> & { id?: string }>(() => defaultEntry(state.projects[0]?.id ?? ''))
-  const anchor = new Date('2026-05-11T12:00:00')
-  const days = mode === 'week' ? getWeekDays(anchor) : getMonthDays(anchor)
+  const planningAnchor = useMemo(() => getPlanningAnchor(state), [state])
+  const [entryDraft, setEntryDraft] = useState<Omit<TimeEntry, 'id'> & { id?: string }>(() => defaultEntry(state.projects[0]?.id ?? '', toDateKey(getPlanningAnchor(state))))
+  const days = mode === 'week' ? getWeekDays(planningAnchor) : getMonthDays(planningAnchor)
 
   function submitEntry(event: FormEvent) {
     event.preventDefault()
@@ -371,7 +384,7 @@ function Planning({
       hours,
       title: entryDraft.title || 'Gepland werk',
     })
-    setEntryDraft(defaultEntry(entryDraft.projectId || state.projects[0]?.id || ''))
+    setEntryDraft(defaultEntry(entryDraft.projectId || state.projects[0]?.id || '', toDateKey(planningAnchor)))
   }
 
   function quickProject() {
@@ -393,9 +406,10 @@ function Planning({
   return (
     <div className="space-y-5">
       <ScreenIntro screen="planning" />
-      <div className="grid min-w-0 gap-5 2xl:grid-cols-[340px_minmax(0,1fr)]">
+      <div className="grid min-w-0 gap-5 min-[1380px]:grid-cols-[320px_minmax(0,1fr)]">
+        <div className="order-2 min-[1380px]:order-1">
         <Panel title={entryDraft.id ? 'Planning bijwerken' : 'Tijdblok toevoegen'}>
-          <form onSubmit={submitEntry} className="grid gap-3 md:grid-cols-2 2xl:block 2xl:space-y-3">
+          <form onSubmit={submitEntry} className="grid gap-3 md:grid-cols-2 min-[1380px]:block min-[1380px]:space-y-3">
             <Field label="Project">
               <select className="field" value={entryDraft.projectId} onChange={(event) => setEntryDraft({ ...entryDraft, projectId: event.target.value })} required>
                 {state.projects.map((project) => (
@@ -440,11 +454,12 @@ function Planning({
             </div>
           </form>
         </Panel>
+        </div>
 
-      <section className="min-w-0 space-y-4">
+      <section className="order-1 min-w-0 space-y-4 min-[1380px]:order-2">
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="font-display text-2xl font-black tracking-normal">Mei 2026</h2>
+            <h2 className="font-display text-2xl font-black tracking-normal">{planningAnchor.toLocaleDateString('nl-BE', { month: 'long', year: 'numeric' })}</h2>
             <p className="text-sm text-app-muted">Drag-free MVP: plannen via het formulier, wijzigen via de blokken.</p>
           </div>
           <div className="segmented">
@@ -453,7 +468,7 @@ function Planning({
           </div>
         </div>
 
-        <div className={mode === 'week' ? 'grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7' : 'grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7'}>
+        <div className={mode === 'week' ? 'grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-4 min-[1380px]:grid-cols-7' : 'grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-4 min-[1380px]:grid-cols-7'}>
           {days.map((day) => {
             const key = toDateKey(day)
             const entries = state.timeEntries.filter((entry) => entry.date === key).sort((a, b) => a.startTime.localeCompare(b.startTime))
@@ -523,48 +538,50 @@ function Projects({ state, onSave, onDelete }: { state: PlanState; onSave: (proj
   return (
     <div className="space-y-5">
       <ScreenIntro screen="projects" />
-      <div className="grid gap-5 xl:grid-cols-[380px_minmax(0,1fr)]">
-      <Panel title={draft.id ? 'Project bijwerken' : 'Project toevoegen'}>
-        <form onSubmit={submitProject} className="space-y-3">
-          <Field label="Naam"><input className="field" value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} required /></Field>
-          <Field label="Klant"><input className="field" value={draft.client} onChange={(event) => setDraft({ ...draft, client: event.target.value })} required /></Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Status">
-              <select className="field" value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value as ProjectStatus })}>
-                {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-              </select>
-            </Field>
-            <Field label="Type">
-              <select className="field" value={draft.type} onChange={(event) => setDraft({ ...draft, type: event.target.value as ProjectType })}>
-                {Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-              </select>
-            </Field>
-          </div>
-          <Field label="Deadline"><input className="field" type="date" value={draft.deadline} onChange={(event) => setDraft({ ...draft, deadline: event.target.value })} /></Field>
-          <div className="grid grid-cols-3 gap-3">
-            <Field label="Uren"><input className="field" type="number" value={draft.estimatedHours} onChange={(event) => setDraft({ ...draft, estimatedHours: Number(event.target.value) })} /></Field>
-            <Field label="Tarief"><input className="field" type="number" value={draft.rate} onChange={(event) => setDraft({ ...draft, rate: Number(event.target.value) })} /></Field>
-            <Field label="Budget"><input className="field" type="number" value={draft.budget} onChange={(event) => setDraft({ ...draft, budget: Number(event.target.value) })} /></Field>
-          </div>
-          <Field label="Kleur">
-            <div className="flex flex-wrap gap-2">
-              {projectColors.map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  className={`h-8 w-8 rounded-lg border-2 ${draft.color === color ? 'border-app-navy' : 'border-app-border'}`}
-                  style={{ background: color }}
-                  aria-label={`Kleur ${color}`}
-                  onClick={() => setDraft({ ...draft, color })}
-                />
-              ))}
+      <div className="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
+        <div className="order-2 xl:order-1">
+        <Panel title={draft.id ? 'Project bijwerken' : 'Project toevoegen'}>
+          <form onSubmit={submitProject} className="space-y-3">
+            <Field label="Naam"><input className="field" value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} required /></Field>
+            <Field label="Klant"><input className="field" value={draft.client} onChange={(event) => setDraft({ ...draft, client: event.target.value })} required /></Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Status">
+                <select className="field" value={draft.status} onChange={(event) => setDraft({ ...draft, status: event.target.value as ProjectStatus })}>
+                  {Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </Field>
+              <Field label="Type">
+                <select className="field" value={draft.type} onChange={(event) => setDraft({ ...draft, type: event.target.value as ProjectType })}>
+                  {Object.entries(typeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </Field>
             </div>
-          </Field>
-          <button className="btn-primary w-full" type="submit"><Plus size={17} /> {draft.id ? 'Project bewaren' : 'Project toevoegen'}</button>
-        </form>
-      </Panel>
+            <Field label="Deadline"><input className="field" type="date" value={draft.deadline} onChange={(event) => setDraft({ ...draft, deadline: event.target.value })} /></Field>
+            <div className="grid grid-cols-3 gap-3">
+              <Field label="Uren"><input className="field" type="number" value={draft.estimatedHours} onChange={(event) => setDraft({ ...draft, estimatedHours: Number(event.target.value) })} /></Field>
+              <Field label="Tarief"><input className="field" type="number" value={draft.rate} onChange={(event) => setDraft({ ...draft, rate: Number(event.target.value) })} /></Field>
+              <Field label="Budget"><input className="field" type="number" value={draft.budget} onChange={(event) => setDraft({ ...draft, budget: Number(event.target.value) })} /></Field>
+            </div>
+            <Field label="Kleur">
+              <div className="flex flex-wrap gap-2">
+                {projectColors.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    className={`h-8 w-8 rounded-lg border-2 ${draft.color === color ? 'border-app-navy' : 'border-app-border'}`}
+                    style={{ background: color }}
+                    aria-label={`Kleur ${color}`}
+                    onClick={() => setDraft({ ...draft, color })}
+                  />
+                ))}
+              </div>
+            </Field>
+            <button className="btn-primary w-full" type="submit"><Plus size={17} /> {draft.id ? 'Project bewaren' : 'Project toevoegen'}</button>
+          </form>
+        </Panel>
+        </div>
 
-      <section className="grid gap-3 lg:grid-cols-2">
+      <section className="order-1 grid gap-3 lg:grid-cols-2 xl:order-2">
         {state.projects.map((project) => {
           const entries = state.timeEntries.filter((entry) => entry.projectId === project.id)
           const hours = entries.reduce((sum, entry) => sum + entry.hours, 0)
@@ -782,9 +799,9 @@ function MetricCard({ icon: Icon, label, value, helper }: { icon: typeof Clock3;
 
 function MiniMetric({ label, value, light = false }: { label: string; value: string; light?: boolean }) {
   return (
-    <div className={`rounded-xl border p-3 ${light ? 'border-app-border bg-app-paper/72' : 'border-app-paper/14 bg-white/7'}`}>
-      <p className={`text-xs font-bold ${light ? 'text-app-muted' : 'text-app-paper/62'}`}>{label}</p>
-      <strong className="mt-1 block font-display text-lg font-black tracking-normal">{value}</strong>
+    <div className={`min-w-0 rounded-xl border p-3 ${light ? 'border-app-border bg-app-paper/72' : 'border-app-paper/14 bg-white/7'}`}>
+      <p className={`truncate text-xs font-bold ${light ? 'text-app-muted' : 'text-app-paper/62'}`}>{label}</p>
+      <strong className="mt-1 block truncate font-display text-base font-black tracking-normal md:text-lg">{value}</strong>
     </div>
   )
 }
@@ -829,11 +846,42 @@ function EntryList({
   )
 }
 
+function dateFromKey(key: string) {
+  return new Date(`${key}T12:00:00`)
+}
+
+function getPlanningAnchor(state: PlanState) {
+  const today = todayKey()
+  const futureEntry = [...state.timeEntries]
+    .filter((entry) => entry.date >= today)
+    .sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`))[0]
+
+  if (futureEntry) return dateFromKey(futureEntry.date)
+
+  const latestEntry = [...state.timeEntries].sort((a, b) => `${b.date}${b.startTime}`.localeCompare(`${a.date}${a.startTime}`))[0]
+  if (latestEntry) return dateFromKey(latestEntry.date)
+
+  return new Date()
+}
+
+function formatWeekLabel(days: Date[]) {
+  const first = days[0]
+  const last = days[days.length - 1]
+  if (!first || !last) return 'deze week'
+  const month = last.toLocaleDateString('nl-BE', { month: 'short' }).replace('.', '')
+  return `${first.getDate()}-${last.getDate()} ${month}`
+}
+
 function getMetrics(state: PlanState) {
   const today = todayKey()
-  const weekKeys = new Set(getWeekDays(new Date()).map(toDateKey))
+  const planningAnchor = getPlanningAnchor(state)
+  const weekDays = getWeekDays(planningAnchor)
+  const weekKeys = new Set(weekDays.map(toDateKey))
   const todayEntries = state.timeEntries.filter((entry) => entry.date === today)
   const weekEntries = state.timeEntries.filter((entry) => weekKeys.has(entry.date))
+  const nextEntry = [...state.timeEntries].filter((entry) => entry.date >= today).sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`))[0]
+  const focusDate = todayEntries.length ? today : nextEntry?.date
+  const focusEntries = focusDate ? state.timeEntries.filter((entry) => entry.date === focusDate).sort((a, b) => a.startTime.localeCompare(b.startTime)) : []
   const billableHours = state.timeEntries.filter((entry) => entry.billable).reduce((sum, entry) => sum + entry.hours, 0)
   const hourlyRevenue = state.timeEntries.reduce((sum, entry) => sum + entryRevenue(state.projects, entry), 0)
   const fixedRevenue = state.projects.filter((project) => project.type === 'fixed' && project.status !== 'archived').reduce((sum, project) => sum + (project.budget || 0), 0)
@@ -841,8 +889,11 @@ function getMetrics(state: PlanState) {
     activeProjects: state.projects.filter((project) => project.status === 'active').length,
     todayHours: todayEntries.reduce((sum, entry) => sum + entry.hours, 0),
     todayEntries,
+    focusEntries,
+    focusTitle: todayEntries.length ? 'Vandaag' : focusDate ? `Eerstvolgende planning · ${dateFromKey(focusDate).toLocaleDateString('nl-BE', { day: '2-digit', month: 'short' })}` : 'Vandaag',
     weekHours: weekEntries.reduce((sum, entry) => sum + entry.hours, 0),
     weekEntries: weekEntries.length,
+    weekLabel: formatWeekLabel(weekDays),
     billableHours,
     revenue: hourlyRevenue + fixedRevenue,
     deadlines: [...state.projects]
