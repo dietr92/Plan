@@ -298,34 +298,23 @@ function NavButton({
 
 function Dashboard({ state, metrics, onScreen }: { state: PlanState; metrics: ReturnType<typeof getMetrics>; onScreen: (screen: Screen) => void }) {
   return (
-    <div className="space-y-5 md:space-y-7">
-      <section className="app-panel relative overflow-hidden rounded-2xl p-4 md:p-6">
-        <div className="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full bg-app-gold/28 blur-3xl" />
-        <div className="pointer-events-none absolute right-12 top-12 h-60 w-60 rounded-full bg-app-blue/24 blur-3xl" />
-        <div className="relative grid gap-5 md:grid-cols-[1.28fr_.72fr]">
-          <div>
-            <p className="app-caption text-app-blue">{screenMeta.dashboard.eyebrow}</p>
-            <h2 className="mt-3 max-w-3xl font-display text-3xl font-black leading-tight tracking-normal md:text-4xl">
-              {screenMeta.dashboard.title}
-            </h2>
-            <p className="mt-3 max-w-2xl text-app-muted">
-              {screenMeta.dashboard.text}
+    <div className="space-y-4 md:space-y-5">
+      <section className="app-panel rounded-2xl px-4 py-3">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="min-w-0">
+            <p className="app-caption text-app-blue">{metrics.todayEntries.length ? 'Vandaag' : 'Eerstvolgend'}</p>
+            <h2 className="font-display text-xl font-black tracking-normal md:text-2xl">{metrics.focusTitle}</h2>
+            <p className="text-sm text-app-muted">
+              {formatHours(metrics.todayEntries.length ? metrics.todayHours : metrics.focusEntries.reduce((sum, entry) => sum + entry.hours, 0))} gepland · week {metrics.weekLabel}
             </p>
-            <div className="mt-5 flex flex-wrap gap-2">
-              <button className="btn-primary bg-app-gold text-app-navy hover:bg-app-gold/90" onClick={() => onScreen('planning')}>
-                <Plus size={17} /> Uren plannen
-              </button>
-              <button className="btn-secondary" onClick={() => onScreen('projects')}>
-                Project toevoegen
-              </button>
-            </div>
           </div>
-          <div className="grid grid-cols-2 gap-2 self-end rounded-xl bg-app-navy p-2 text-app-paper shadow-app md:grid-cols-1 md:p-3">
-            <MiniMetric label={metrics.todayEntries.length ? 'Vandaag' : 'Eerstvolgend'} value={formatHours(metrics.todayEntries.length ? metrics.todayHours : metrics.focusEntries.reduce((sum, entry) => sum + entry.hours, 0))} />
-            <MiniMetric label={`Week ${metrics.weekLabel}`} value={formatHours(metrics.weekHours)} />
-            <div className="col-span-2 md:col-span-1">
-              <MiniMetric label="Omzetindicatie" value={formatCurrency(metrics.revenue)} />
-            </div>
+          <div className="flex flex-wrap gap-2">
+            <button className="btn-primary" onClick={() => onScreen('planning')}>
+              <Plus size={17} /> Uren plannen
+            </button>
+            <button className="btn-secondary" onClick={() => onScreen('projects')}>
+              Project toevoegen
+            </button>
           </div>
         </div>
       </section>
