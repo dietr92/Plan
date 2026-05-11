@@ -342,7 +342,28 @@ function Planning({
   const [mode, setMode] = useState<'week' | 'month'>('week')
   const planningAnchor = useMemo(() => getPlanningAnchor(state), [state])
   const [entryDraft, setEntryDraft] = useState<Omit<TimeEntry, 'id'> & { id?: string }>(() => defaultEntry(state.projects[0]?.id ?? '', toDateKey(getPlanningAnchor(state))))
+  const formRef = useRef<HTMLDivElement>(null)
+  const titleInputRef = useRef<HTMLInputElement>(null)
   const days = mode === 'week' ? getWeekDays(planningAnchor) : getMonthDays(planningAnchor)
+
+  function focusForm() {
+    window.requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      titleInputRef.current?.focus({ preventScroll: true })
+    })
+  }
+
+  function selectDay(date: string) {
+    const selectedProjectStillExists = state.projects.some((project) => project.id === entryDraft.projectId)
+    const projectId = selectedProjectStillExists ? entryDraft.projectId : state.projects[0]?.id ?? ''
+    setEntryDraft(defaultEntry(projectId, date))
+    focusForm()
+  }
+
+  function selectEntry(entry: TimeEntry) {
+    setEntryDraft(entry)
+    focusForm()
+  }
 
   function submitEntry(event: FormEvent) {
     event.preventDefault()
@@ -375,7 +396,7 @@ function Planning({
   return (
     <div className="space-y-5">
       <div className="grid min-w-0 gap-5 min-[1380px]:grid-cols-[320px_minmax(0,1fr)]">
-        <div className="order-2 min-[1380px]:order-1">
+        <div ref={formRef} className="order-2 scroll-mt-4 min-[1380px]:order-1">
         <Panel title={entryDraft.id ? 'Planning bijwerken' : 'Tijdblok toevoegen'}>
           <form onSubmit={submitEntry} className="grid gap-3 md:grid-cols-2 min-[1380px]:block min-[1380px]:space-y-3">
             <Field label="Project">
@@ -388,7 +409,7 @@ function Planning({
               </select>
             </Field>
             <Field label="Titel">
-              <input className="field" value={entryDraft.title} onChange={(event) => setEntryDraft({ ...entryDraft, title: event.target.value })} placeholder="Workshop, bouwblok, review..." />
+              <input ref={titleInputRef} className="field" value={entryDraft.title} onChange={(event) => setEntryDraft({ ...entryDraft, title: event.target.value })} placeholder="Workshop, bouwblok, review..." />
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Datum">
@@ -441,14 +462,34 @@ function Planning({
           {days.map((day) => {
             const key = toDateKey(day)
             const entries = state.timeEntries.filter((entry) => entry.date === key).sort((a, b) => a.startTime.localeCompare(b.startTime))
+            const selectedDay = entryDraft.date === key
             return (
-              <article key={key} className="app-panel min-w-0 rounded-2xl p-3 xl:min-h-[178px]">
+              <article
+                key={key}
+                onClick={() => selectDay(key)}
+                className={`app-panel min-w-0 cursor-pointer rounded-2xl p-3 transition hover:border-app-blue hover:bg-app-blue/8 xl:min-h-[178px] ${
+                  selectedDay ? 'border-app-blue bg-app-blue/10 shadow-app' : ''
+                }`}
+              >
                 <div className="mb-3 flex items-center justify-between gap-2">
                   <div className="min-w-0">
                     <p className="app-caption text-app-muted">{day.toLocaleDateString('nl-BE', { weekday: 'short' })}</p>
                     <h3 className="font-display text-xl font-black">{day.getDate()}</h3>
                   </div>
-                  <span className="shrink-0 rounded-full bg-app-blue/16 px-2.5 py-1 text-xs font-bold">{formatHours(entries.reduce((sum, entry) => sum + entry.hours, 0))}</span>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <span className="rounded-full bg-app-blue/16 px-2.5 py-1 text-xs font-bold">{formatHours(entries.reduce((sum, entry) => sum + entry.hours, 0))}</span>
+                    <button
+                      type="button"
+                      className="icon-btn h-8 w-8 bg-app-paper/80"
+                      aria-label={`Tijdblok toevoegen op ${day.toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' })}`}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        selectDay(key)
+                      }}
+                    >
+                      <Plus size={15} />
+                    </button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   {entries.map((entry) => {
@@ -461,7 +502,10 @@ function Planning({
                         className={`w-full rounded-xl border p-2 text-left transition hover:border-app-blue ${
                           selected ? 'border-app-navy bg-app-navy text-app-paper' : 'border-app-border bg-app-paper'
                         }`}
-                        onClick={() => setEntryDraft(entry)}
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          selectEntry(entry)
+                        }}
                       >
                         <span className="block truncate text-sm font-bold">{entry.title}</span>
                         <span className={`mt-1 flex items-center gap-2 text-xs ${selected ? 'text-app-paper/70' : 'text-app-muted'}`}>
@@ -471,6 +515,11 @@ function Planning({
                       </button>
                     )
                   })}
+                  {entries.length === 0 && (
+                    <div className="rounded-xl border border-dashed border-app-blue/45 bg-app-blue/8 px-3 py-2 text-sm font-bold text-app-navy">
+                      <Plus className="mr-1 inline" size={15} /> Tijdblok
+                    </div>
+                  )}
                 </div>
               </article>
             )
