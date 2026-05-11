@@ -56,32 +56,12 @@ const navItems: { id: Screen; label: string; icon: typeof LayoutDashboard }[] = 
   { id: 'settings', label: 'Data', icon: Settings },
 ]
 
-const screenMeta: Record<Screen, { eyebrow: string; title: string; text: string }> = {
-  dashboard: {
-    eyebrow: 'Planning cockpit',
-    title: 'Eén ritme voor projecten, uren en capaciteit.',
-    text: 'Een compact overzicht van planning, deadlines en projectwaarde voor dagelijkse opvolging.',
-  },
-  planning: {
-    eyebrow: 'Week en maand',
-    title: 'Weekplanning',
-    text: 'Plan en wijzig tijdblokken vanuit één compact werkbeeld.',
-  },
-  projects: {
-    eyebrow: 'Project cockpit',
-    title: 'Projecten, budget en deadlines in één werkbeeld.',
-    text: 'Beheer klant, status, tarief, budget, planning en voortgang zonder aparte spreadsheet.',
-  },
-  reports: {
-    eyebrow: 'Rapportage',
-    title: 'Zie waar tijd en waarde naartoe gaan.',
-    text: 'Bundel factureerbare uren, projectstatus en omzetindicatie tot een bruikbaar rapport.',
-  },
-  settings: {
-    eyebrow: 'Beheer',
-    title: 'Data, demo en sessie onder controle.',
-    text: 'Exporteer, importeer of herstel data zonder database-instellingen in de browser te tonen.',
-  },
+const screenEyebrows: Record<Screen, string> = {
+  dashboard: 'Planning cockpit',
+  planning: 'Week en maand',
+  projects: 'Project cockpit',
+  reports: 'Rapportage',
+  settings: 'Beheer',
 }
 
 const defaultEntry = (projectId = '', date = todayKey()): Omit<TimeEntry, 'id'> => ({
@@ -187,7 +167,7 @@ function App({ initialState, userEmail }: { initialState: PlanState; userEmail: 
         <main className="min-w-0 pb-24 md:pb-0">
           <header className="hidden h-[74px] items-center justify-between border-b border-app-border bg-app-paper/78 px-7 backdrop-blur md:flex">
             <div>
-              <p className="app-caption text-app-muted">{screenMeta[screen].eyebrow}</p>
+              <p className="app-caption text-app-muted">{screenEyebrows[screen]}</p>
               <h1 className="font-display text-2xl font-black tracking-normal">{navItems.find((item) => item.id === screen)?.label}</h1>
             </div>
             <div className="flex items-center gap-2">
@@ -445,10 +425,10 @@ function Planning({
         </div>
 
       <section className="order-1 min-w-0 space-y-4 min-[1380px]:order-2">
-        <div className="app-panel flex min-w-0 flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 border-b border-app-border pb-3">
           <div>
             <p className="app-caption text-app-blue">Week en maand</p>
-            <h2 className="font-display text-xl font-black tracking-normal md:text-2xl">{planningAnchor.toLocaleDateString('nl-BE', { month: 'long', year: 'numeric' })}</h2>
+            <h2 className="font-display text-lg font-black tracking-normal md:text-2xl">{planningAnchor.toLocaleDateString('nl-BE', { month: 'long', year: 'numeric' })}</h2>
             <p className="text-sm text-app-muted">Tijdblokken toevoegen, aanpassen en opvolgen.</p>
           </div>
           <div className="segmented">
@@ -526,7 +506,6 @@ function Projects({ state, onSave, onDelete }: { state: PlanState; onSave: (proj
 
   return (
     <div className="space-y-5">
-      <ScreenIntro screen="projects" />
       <div className="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
         <div className="order-2 xl:order-1">
         <Panel title={draft.id ? 'Project bijwerken' : 'Project toevoegen'}>
@@ -631,7 +610,6 @@ function Reports({ state }: { state: PlanState }) {
 
   return (
     <div className="space-y-5">
-      <ScreenIntro screen="reports" />
       <section className="grid gap-3 sm:grid-cols-3">
         <MetricCard icon={Clock3} label="Alle uren" value={formatHours(rows.reduce((sum, row) => sum + row.hours, 0))} helper="planning totaal" />
         <MetricCard icon={CheckCircle2} label="Factureerbaar" value={formatHours(rows.reduce((sum, row) => sum + row.billable, 0))} helper="uren met facturatie" />
@@ -702,7 +680,6 @@ function DataSettings({
 
   return (
     <div className="space-y-5">
-      <ScreenIntro screen="settings" />
       <div className="grid gap-5 lg:grid-cols-3">
         <Panel title="Export en import">
           <div className="space-y-3 text-sm text-app-muted">
@@ -739,19 +716,6 @@ function DataSettings({
         </Panel>
       </div>
     </div>
-  )
-}
-
-function ScreenIntro({ screen }: { screen: Screen }) {
-  const meta = screenMeta[screen]
-  return (
-    <section className="app-panel rounded-2xl px-5 py-4 md:px-6">
-      <p className="app-caption text-app-blue">{meta.eyebrow}</p>
-      <div className="mt-2 grid gap-2 md:grid-cols-[minmax(0,.86fr)_minmax(280px,.56fr)] md:items-end">
-        <h2 className="font-display text-2xl font-black leading-tight tracking-normal md:text-3xl">{meta.title}</h2>
-        <p className="text-sm leading-relaxed text-app-muted md:text-base">{meta.text}</p>
-      </div>
-    </section>
   )
 }
 
