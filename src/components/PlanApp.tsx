@@ -152,7 +152,6 @@ function App({ initialState, userEmail }: { initialState: PlanState; userEmail: 
         <aside className="hidden bg-app-navy text-app-paper md:flex md:flex-col">
           <div className="border-b border-app-blue/18 px-4 py-4">
             <PlanWordmark compact reverse />
-            <p className="mt-3 max-w-44 text-xs font-medium leading-relaxed text-app-paper/56">Projecten, planning en uren.</p>
           </div>
           <nav className="flex-1 space-y-1 px-2.5 py-3" aria-label="Hoofdnavigatie">
             {navItems.map((item) => (
