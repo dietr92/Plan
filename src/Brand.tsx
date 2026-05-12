@@ -22,18 +22,20 @@ export function AppetiteMark({ size = 36, reverse = false }: AppetiteMarkProps) 
 }
 
 export function PlanWordmark({ compact = false, reverse = false }: { compact?: boolean; reverse?: boolean }) {
+  const mainColor = reverse ? 'text-app-paper' : 'text-app-navy'
+  const subColor = reverse ? 'text-app-paper/82' : 'text-app-navy'
+
   return (
-    <div className="flex items-center gap-3">
-      <AppetiteMark size={compact ? 34 : 42} reverse={reverse} />
-      <div className="leading-none">
-        <div className={`font-display font-black tracking-normal ${compact ? 'text-lg' : 'text-2xl'} ${reverse ? 'text-app-paper' : 'text-app-navy'}`}>
-          Plan
-        </div>
-        <div className={`mt-1 text-[11px] font-bold uppercase tracking-[0.18em] ${reverse ? 'text-app-paper/70' : 'text-app-muted'}`}>
-          by Appetite
-        </div>
+    <div className="flex items-center gap-3" aria-label="Plan by Appetite">
+      <div className={`font-display font-black uppercase leading-none tracking-[0.28em] ${compact ? 'text-xl' : 'text-3xl'} ${mainColor}`}>
+        Plan
       </div>
+      <div className="grid gap-1" aria-hidden="true">
+        <span className="block h-1 w-8 rounded-full bg-app-gold" />
+        <span className="block h-1 w-5 rounded-full bg-app-blue" />
+        <span className="block h-1 w-7 rounded-full bg-app-blue" />
+      </div>
+      <div className={`text-[11px] font-black uppercase leading-none tracking-[0.22em] ${subColor}`}>By Appetite</div>
     </div>
   )
 }
-
