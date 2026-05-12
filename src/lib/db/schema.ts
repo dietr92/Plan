@@ -74,3 +74,22 @@ export const timeEntries = pgTable('time_entries', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
+
+export const feedback = pgTable('feedback', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  sourceApp: text('source_app').notNull().default('plan'),
+  environment: text('environment').notNull().default('development'),
+  type: text('type').notNull().default('OTHER'),
+  message: text('message').notNull(),
+  screenPath: text('screen_path').notNull().default('/'),
+  screenLabel: text('screen_label').notNull().default('Plan'),
+  url: text('url').notNull().default(''),
+  userAgent: text('user_agent').notNull().default(''),
+  status: text('status').notNull().default('PENDING'),
+  adminResponse: text('admin_response').notNull().default(''),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})

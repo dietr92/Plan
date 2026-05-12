@@ -8,6 +8,13 @@
       "when": 1778418529433,
       "tag": "0000_tiny_retro_girl",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1778512158204,
+      "tag": "0001_hard_pyro",
+      "breakpoints": true
     }
   ]
 }

@@ -31,6 +31,7 @@ import {
   upsertProjectAction,
 } from '@/app/actions'
 import { PlanWordmark } from '../Brand'
+import { FeedbackWidget } from './FeedbackWidget'
 import { emptyProject, projectColors } from '../demo-data'
 import type { PlanState, Project, ProjectStatus, ProjectType, Screen, TimeEntry } from '../types'
 import {
@@ -74,6 +75,9 @@ const defaultEntry = (projectId = '', date = todayKey()): Omit<TimeEntry, 'id'> 
   billable: true,
   notes: '',
 })
+
+type PlanningView = 'blocks' | 'forecast'
+type MatrixSelection = { projectId: string; date: string } | null
 
 function makeId(prefix: string) {
   return `${prefix}-${crypto.randomUUID()}`
@@ -144,34 +148,34 @@ function App({ initialState, userEmail }: { initialState: PlanState; userEmail: 
       <MobileTopBar menuOpen={menuOpen} onToggle={() => setMenuOpen((value) => !value)} />
       {menuOpen && <MobileMenu active={screen} onNavigate={changeScreen} />}
 
-      <div className="min-h-screen md:grid md:grid-cols-[272px_minmax(0,1fr)]">
+      <div className="min-h-screen md:grid md:grid-cols-[248px_minmax(0,1fr)]">
         <aside className="hidden bg-app-navy text-app-paper md:flex md:flex-col">
-          <div className="border-b border-app-blue/22 px-5 py-5">
-            <PlanWordmark reverse />
-            <p className="mt-4 max-w-44 text-xs font-medium leading-relaxed text-app-paper/64">Planning, projecten en uren in een rustige Appetite workflow.</p>
+          <div className="border-b border-app-blue/18 px-4 py-4">
+            <PlanWordmark compact reverse />
+            <p className="mt-3 max-w-44 text-xs font-medium leading-relaxed text-app-paper/56">Projecten, planning en uren.</p>
           </div>
-          <nav className="flex-1 space-y-1 p-3" aria-label="Hoofdnavigatie">
+          <nav className="flex-1 space-y-1 px-2.5 py-3" aria-label="Hoofdnavigatie">
             {navItems.map((item) => (
               <NavButton key={item.id} item={item} active={screen === item.id} onClick={() => changeScreen(item.id)} />
             ))}
           </nav>
-          <div className="m-3 rounded-xl border border-app-blue/24 bg-app-blue/12 p-4 text-xs text-app-paper/66">
+          <div className="m-2.5 rounded-lg border border-app-blue/20 bg-app-blue/10 p-3 text-xs text-app-paper/62">
             <div className="mb-2 flex items-center gap-2 text-app-paper">
               <span className="h-2 w-2 rounded-full bg-app-blue" />
               <strong>Postgres live</strong>
             </div>
-            Data wordt server-side bewaard voor {userEmail}.
+            <span className="block truncate">{userEmail}</span>
           </div>
         </aside>
 
         <main className="min-w-0 pb-24 md:pb-0">
-          <header className="hidden h-[74px] items-center justify-between border-b border-app-border bg-app-paper/78 px-7 backdrop-blur md:flex">
+          <header className="hidden h-16 items-center justify-between border-b border-app-border bg-app-paper/92 px-5 md:flex">
             <div>
               <p className="app-caption text-app-muted">{screenEyebrows[screen]}</p>
-              <h1 className="font-display text-2xl font-black tracking-normal">{navItems.find((item) => item.id === screen)?.label}</h1>
+              <h1 className="font-display text-xl font-black tracking-normal">{navItems.find((item) => item.id === screen)?.label}</h1>
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-3 rounded-full border border-app-border bg-app-card/82 px-4 py-2 text-sm shadow-soft">
+              <div className="flex items-center gap-2 rounded-lg border border-app-border bg-app-card/82 px-3 py-2 text-sm shadow-soft">
                 <span className="h-2.5 w-2.5 rounded-full bg-app-gold" />
                 {formatHours(metrics.weekHours)} gepland {metrics.weekLabel}
               </div>
@@ -183,7 +187,7 @@ function App({ initialState, userEmail }: { initialState: PlanState; userEmail: 
             </div>
           </header>
 
-          <div className="mx-auto max-w-[1480px] px-4 py-5 md:px-7 md:py-7">
+          <div className="mx-auto max-w-[1360px] px-4 py-4 md:px-5 md:py-5">
             {error && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-800">{error}</div>}
             {isPending && <div className="mb-4 rounded-lg border border-app-blue/30 bg-app-blue/12 px-4 py-3 text-sm font-bold text-app-navy">Bezig met bewaren...</div>}
             {screen === 'dashboard' && <Dashboard state={state} metrics={metrics} onScreen={changeScreen} />}
@@ -202,20 +206,22 @@ function App({ initialState, userEmail }: { initialState: PlanState; userEmail: 
         </main>
       </div>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-app-border bg-app-card/96 px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 shadow-[0_-14px_40px_rgba(11,32,56,.12)] backdrop-blur md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-app-border bg-app-card/96 px-2 pb-[calc(env(safe-area-inset-bottom)+0.45rem)] pt-1.5 shadow-[0_-10px_26px_rgba(11,32,56,.1)] backdrop-blur md:hidden">
         <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
           {navItems.map((item) => (
             <NavButton key={item.id} item={item} active={screen === item.id} onClick={() => changeScreen(item.id)} mobile />
           ))}
         </div>
       </nav>
+
+      <FeedbackWidget screen={screen} />
     </div>
   )
 }
 
 function MobileTopBar({ menuOpen, onToggle }: { menuOpen: boolean; onToggle: () => void }) {
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b border-app-border bg-app-paper/92 px-4 backdrop-blur md:hidden">
+    <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-app-border bg-app-paper/96 px-4 backdrop-blur md:hidden">
       <PlanWordmark compact />
       <button className="grid h-10 w-10 place-items-center rounded-lg border border-app-border bg-app-card" onClick={onToggle} aria-label="Menu">
         {menuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -226,7 +232,7 @@ function MobileTopBar({ menuOpen, onToggle }: { menuOpen: boolean; onToggle: () 
 
 function MobileMenu({ active, onNavigate }: { active: Screen; onNavigate: (screen: Screen) => void }) {
   return (
-    <div className="fixed inset-x-0 top-16 z-50 border-b border-app-border bg-app-card p-3 shadow-app md:hidden">
+    <div className="fixed inset-x-0 top-14 z-50 border-b border-app-border bg-app-card p-3 shadow-app md:hidden">
       <div className="grid grid-cols-5 gap-1">
         {navItems.map((item) => (
           <NavButton key={item.id} item={item} active={active === item.id} onClick={() => onNavigate(item.id)} mobile />
@@ -253,7 +259,7 @@ function NavButton({
       <button
         type="button"
         onClick={onClick}
-        className={`flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-lg px-1 text-[10px] font-bold transition ${
+        className={`flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-lg px-1 text-[10px] font-bold transition ${
           active ? 'bg-app-navy text-app-paper' : 'text-app-muted hover:bg-app-blue/16 hover:text-app-navy'
         }`}
       >
@@ -266,8 +272,8 @@ function NavButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-bold transition ${
-        active ? 'bg-app-blue text-app-navy shadow-soft' : 'text-app-paper/62 hover:bg-app-blue/12 hover:text-app-paper'
+      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm font-bold transition ${
+        active ? 'bg-app-blue text-app-navy shadow-soft' : 'text-app-paper/60 hover:bg-app-blue/12 hover:text-app-paper'
       }`}
     >
       <Icon size={19} />
@@ -278,12 +284,12 @@ function NavButton({
 
 function Dashboard({ state, metrics, onScreen }: { state: PlanState; metrics: ReturnType<typeof getMetrics>; onScreen: (screen: Screen) => void }) {
   return (
-    <div className="space-y-4 md:space-y-5">
-      <section className="app-panel rounded-2xl px-4 py-3">
+    <div className="space-y-4">
+      <section className="app-toolbar px-3.5 py-3">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="min-w-0">
             <p className="app-caption text-app-blue">{metrics.todayEntries.length ? 'Vandaag' : 'Eerstvolgend'}</p>
-            <h2 className="font-display text-xl font-black tracking-normal md:text-2xl">{metrics.focusTitle}</h2>
+            <h2 className="font-display text-lg font-black tracking-normal md:text-xl">{metrics.focusTitle}</h2>
             <p className="text-sm text-app-muted">
               {formatHours(metrics.todayEntries.length ? metrics.todayHours : metrics.focusEntries.reduce((sum, entry) => sum + entry.hours, 0))} gepland · week {metrics.weekLabel}
             </p>
@@ -299,23 +305,23 @@ function Dashboard({ state, metrics, onScreen }: { state: PlanState; metrics: Re
         </div>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard icon={FolderKanban} label="Actieve projecten" value={String(metrics.activeProjects)} helper={`${state.projects.length} totaal`} />
         <MetricCard icon={Clock3} label="Factureerbaar" value={formatHours(metrics.billableHours)} helper="op alle geplande entries" />
         <MetricCard icon={CalendarDays} label="Weekplanning" value={formatHours(metrics.weekHours)} helper={`${metrics.weekEntries} blokken · ${metrics.weekLabel}`} />
         <MetricCard icon={BarChart3} label="Verwachte omzet" value={formatCurrency(metrics.revenue)} helper="regie + vaste prijs" />
       </section>
 
-      <section className="grid gap-4 lg:grid-cols-[1fr_.82fr]">
+      <section className="grid gap-3 lg:grid-cols-[1fr_.82fr]">
         <Panel title="Komende deadlines">
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {metrics.deadlines.map((project) => (
-              <div key={project.id} className="flex items-center justify-between gap-3 rounded-lg border border-app-border bg-app-paper/70 p-3">
+              <div key={project.id} className="app-row flex items-center justify-between gap-3 p-2.5">
                 <div className="min-w-0">
                   <p className="truncate font-bold">{project.name}</p>
                   <p className="text-sm text-app-muted">{project.client}</p>
                 </div>
-                <span className="rounded-lg bg-app-blue/18 px-2.5 py-1 text-sm font-bold">{project.deadline}</span>
+                <span className="rounded-md bg-app-blue/18 px-2.5 py-1 text-sm font-bold">{project.deadline}</span>
               </div>
             ))}
           </div>
@@ -340,11 +346,30 @@ function Planning({
   onProjectCreate: (project: Project) => void
 }) {
   const [mode, setMode] = useState<'week' | 'month'>('week')
+  const [planningView, setPlanningView] = useState<PlanningView>('forecast')
+  const [projectQuery, setProjectQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all')
+  const [matrixSelection, setMatrixSelection] = useState<MatrixSelection>(null)
   const planningAnchor = useMemo(() => getPlanningAnchor(state), [state])
   const [entryDraft, setEntryDraft] = useState<Omit<TimeEntry, 'id'> & { id?: string }>(() => defaultEntry(state.projects[0]?.id ?? '', toDateKey(getPlanningAnchor(state))))
   const formRef = useRef<HTMLDivElement>(null)
   const titleInputRef = useRef<HTMLInputElement>(null)
   const days = mode === 'week' ? getWeekDays(planningAnchor) : getMonthDays(planningAnchor)
+  const visibleProjects = useMemo(() => {
+    const query = projectQuery.trim().toLowerCase()
+    return state.projects.filter((project) => {
+      const matchesQuery = !query || `${project.name} ${project.client}`.toLowerCase().includes(query)
+      const matchesStatus = statusFilter === 'all' || project.status === statusFilter
+      return matchesQuery && matchesStatus
+    })
+  }, [projectQuery, state.projects, statusFilter])
+  const selectedMatrixEntries = useMemo(() => {
+    if (!matrixSelection) return []
+    return state.timeEntries
+      .filter((entry) => entry.projectId === matrixSelection.projectId && entry.date === matrixSelection.date)
+      .sort((a, b) => a.startTime.localeCompare(b.startTime))
+  }, [matrixSelection, state.timeEntries])
+  const selectedMatrixProject = matrixSelection ? state.projects.find((project) => project.id === matrixSelection.projectId) : undefined
 
   function focusForm() {
     window.requestAnimationFrame(() => {
@@ -353,15 +378,28 @@ function Planning({
     })
   }
 
+  function selectProjectDay(projectId: string, date: string, entries: TimeEntry[] = []) {
+    setMatrixSelection({ projectId, date })
+    if (entries.length === 1) {
+      selectEntry(entries[0])
+      return
+    }
+
+    setEntryDraft(defaultEntry(projectId, date))
+    focusForm()
+  }
+
   function selectDay(date: string) {
     const selectedProjectStillExists = state.projects.some((project) => project.id === entryDraft.projectId)
     const projectId = selectedProjectStillExists ? entryDraft.projectId : state.projects[0]?.id ?? ''
     setEntryDraft(defaultEntry(projectId, date))
+    setMatrixSelection(null)
     focusForm()
   }
 
   function selectEntry(entry: TimeEntry) {
     setEntryDraft(entry)
+    setMatrixSelection({ projectId: entry.projectId, date: entry.date })
     focusForm()
   }
 
@@ -394,142 +432,346 @@ function Planning({
   }
 
   return (
-    <div className="space-y-5">
-      <div className="grid min-w-0 gap-5 min-[1380px]:grid-cols-[320px_minmax(0,1fr)]">
-        <div ref={formRef} className="order-2 scroll-mt-4 min-[1380px]:order-1">
-        <Panel title={entryDraft.id ? 'Planning bijwerken' : 'Tijdblok toevoegen'}>
-          <form onSubmit={submitEntry} className="grid gap-3 md:grid-cols-2 min-[1380px]:block min-[1380px]:space-y-3">
-            <Field label="Project">
-              <select className="field" value={entryDraft.projectId} onChange={(event) => setEntryDraft({ ...entryDraft, projectId: event.target.value })} required>
-                {state.projects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Titel">
-              <input ref={titleInputRef} className="field" value={entryDraft.title} onChange={(event) => setEntryDraft({ ...entryDraft, title: event.target.value })} placeholder="Workshop, bouwblok, review..." />
-            </Field>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Datum">
-                <input className="field" type="date" value={entryDraft.date} onChange={(event) => setEntryDraft({ ...entryDraft, date: event.target.value })} />
-              </Field>
-              <Field label="Factureerbaar">
-                <select className="field" value={entryDraft.billable ? 'yes' : 'no'} onChange={(event) => setEntryDraft({ ...entryDraft, billable: event.target.value === 'yes' })}>
-                  <option value="yes">Ja</option>
-                  <option value="no">Nee</option>
+    <div className="space-y-4">
+      <div className={planningView === 'forecast' ? 'grid min-w-0 gap-4' : 'grid min-w-0 gap-4 min-[1380px]:grid-cols-[318px_minmax(0,1fr)]'}>
+        <div
+          ref={formRef}
+          className={planningView === 'forecast' ? 'max-w-xl scroll-mt-4' : 'order-2 scroll-mt-4 min-[1380px]:order-1'}
+          style={planningView === 'forecast' ? { order: 2 } : undefined}
+        >
+          <Panel title={entryDraft.id ? 'Planning bijwerken' : 'Tijdblok toevoegen'}>
+            <form onSubmit={submitEntry} className="grid gap-3 md:grid-cols-2 min-[1380px]:block min-[1380px]:space-y-3">
+              <Field label="Project">
+                <select className="field" value={entryDraft.projectId} onChange={(event) => setEntryDraft({ ...entryDraft, projectId: event.target.value })} required>
+                  {state.projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
                 </select>
               </Field>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Start">
-                <input className="field" type="time" value={entryDraft.startTime} onChange={(event) => setEntryDraft({ ...entryDraft, startTime: event.target.value })} />
+              <Field label="Titel">
+                <input ref={titleInputRef} className="field" value={entryDraft.title} onChange={(event) => setEntryDraft({ ...entryDraft, title: event.target.value })} placeholder="Workshop, bouwblok, review..." />
               </Field>
-              <Field label="Einde">
-                <input className="field" type="time" value={entryDraft.endTime} onChange={(event) => setEntryDraft({ ...entryDraft, endTime: event.target.value })} />
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Datum">
+                  <input className="field" type="date" value={entryDraft.date} onChange={(event) => setEntryDraft({ ...entryDraft, date: event.target.value })} />
+                </Field>
+                <Field label="Factureerbaar">
+                  <select className="field" value={entryDraft.billable ? 'yes' : 'no'} onChange={(event) => setEntryDraft({ ...entryDraft, billable: event.target.value === 'yes' })}>
+                    <option value="yes">Ja</option>
+                    <option value="no">Nee</option>
+                  </select>
+                </Field>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Start">
+                  <input className="field" type="time" value={entryDraft.startTime} onChange={(event) => setEntryDraft({ ...entryDraft, startTime: event.target.value })} />
+                </Field>
+                <Field label="Einde">
+                  <input className="field" type="time" value={entryDraft.endTime} onChange={(event) => setEntryDraft({ ...entryDraft, endTime: event.target.value })} />
+                </Field>
+              </div>
+              <Field label="Notitie">
+                <textarea className="field min-h-20 resize-none" value={entryDraft.notes} onChange={(event) => setEntryDraft({ ...entryDraft, notes: event.target.value })} />
               </Field>
-            </div>
-            <Field label="Notitie">
-              <textarea className="field min-h-20 resize-none" value={entryDraft.notes} onChange={(event) => setEntryDraft({ ...entryDraft, notes: event.target.value })} />
-            </Field>
-            <div className="flex flex-col justify-end gap-3">
-              <button type="button" className="text-left text-sm font-bold text-app-navy underline decoration-app-blue underline-offset-4" onClick={quickProject}>
-                Snel demo-project toevoegen
-              </button>
-              <button className="btn-primary w-full" type="submit">
-                <Plus size={17} /> {entryDraft.id ? 'Bijwerken' : 'Toevoegen'}
-              </button>
-            </div>
-          </form>
-        </Panel>
+              <div className="flex flex-col justify-end gap-3">
+                <button type="button" className="text-left text-sm font-bold text-app-navy underline decoration-app-blue underline-offset-4" onClick={quickProject}>
+                  Snel demo-project toevoegen
+                </button>
+                <button className="btn-primary w-full" type="submit">
+                  <Plus size={17} /> {entryDraft.id ? 'Bijwerken' : 'Toevoegen'}
+                </button>
+              </div>
+            </form>
+          </Panel>
         </div>
 
-      <section className="order-1 min-w-0 space-y-4 min-[1380px]:order-2">
-        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 border-b border-app-border pb-3">
+      <section className="order-1 min-w-0 space-y-3 min-[1380px]:order-2" style={planningView === 'forecast' ? { order: 1 } : undefined}>
+        <div className="app-toolbar flex min-w-0 flex-wrap items-center justify-between gap-3 px-3.5 py-3">
           <div>
-            <p className="app-caption text-app-blue">Week en maand</p>
-            <h2 className="font-display text-lg font-black tracking-normal md:text-2xl">{planningAnchor.toLocaleDateString('nl-BE', { month: 'long', year: 'numeric' })}</h2>
-            <p className="text-sm text-app-muted">Tijdblokken toevoegen, aanpassen en opvolgen.</p>
+            <p className="app-caption text-app-blue">{planningView === 'forecast' ? 'Forecast matrix' : mode === 'week' ? 'Weekplanning' : 'Maandplanning'}</p>
+            <h2 className="font-display text-lg font-black tracking-normal md:text-xl">{planningAnchor.toLocaleDateString('nl-BE', { month: 'long', year: 'numeric' })}</h2>
+            <p className="text-sm text-app-muted">{planningView === 'forecast' ? 'Projecten links, dagen bovenaan, uren in cellen.' : 'Tijdblokken toevoegen, aanpassen en opvolgen.'}</p>
           </div>
-          <div className="segmented">
-            <button className={mode === 'week' ? 'active' : ''} onClick={() => setMode('week')}>Week</button>
-            <button className={mode === 'month' ? 'active' : ''} onClick={() => setMode('month')}>Maand</button>
+          <div className="flex flex-wrap gap-2">
+            <div className="segmented" aria-label="Planningweergave">
+              <button className={planningView === 'blocks' ? 'active' : ''} onClick={() => setPlanningView('blocks')}>Blokken</button>
+              <button className={planningView === 'forecast' ? 'active' : ''} onClick={() => setPlanningView('forecast')}>Forecast</button>
+            </div>
+            <div className="segmented" aria-label="Periode">
+              <button className={mode === 'week' ? 'active' : ''} onClick={() => setMode('week')}>Week</button>
+              <button className={mode === 'month' ? 'active' : ''} onClick={() => setMode('month')}>Maand</button>
+            </div>
           </div>
         </div>
 
-        <div className={mode === 'week' ? 'grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-4 min-[1380px]:grid-cols-7' : 'grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-4 min-[1380px]:grid-cols-7'}>
-          {days.map((day) => {
-            const key = toDateKey(day)
-            const entries = state.timeEntries.filter((entry) => entry.date === key).sort((a, b) => a.startTime.localeCompare(b.startTime))
-            const selectedDay = entryDraft.date === key
-            return (
-              <article
-                key={key}
-                onClick={() => selectDay(key)}
-                className={`app-panel min-w-0 cursor-pointer rounded-2xl p-3 transition hover:border-app-blue hover:bg-app-blue/8 xl:min-h-[178px] ${
-                  selectedDay ? 'border-app-blue bg-app-blue/10 shadow-app' : ''
-                }`}
-              >
-                <div className="mb-3 flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="app-caption text-app-muted">{day.toLocaleDateString('nl-BE', { weekday: 'short' })}</p>
-                    <h3 className="font-display text-xl font-black">{day.getDate()}</h3>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-1">
-                    <span className="rounded-full bg-app-blue/16 px-2.5 py-1 text-xs font-bold">{formatHours(entries.reduce((sum, entry) => sum + entry.hours, 0))}</span>
-                    <button
-                      type="button"
-                      className="icon-btn h-8 w-8 bg-app-paper/80"
-                      aria-label={`Tijdblok toevoegen op ${day.toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' })}`}
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        selectDay(key)
-                      }}
-                    >
-                      <Plus size={15} />
-                    </button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  {entries.map((entry) => {
-                    const project = state.projects.find((item) => item.id === entry.projectId)
-                    const selected = entryDraft.id === entry.id
-                    return (
+        {planningView === 'forecast' && (
+          <>
+            <div className="app-panel p-3">
+              <div className="grid gap-2 md:grid-cols-[minmax(180px,1fr)_180px]">
+                <Field label="Zoek project">
+                  <input className="field" value={projectQuery} onChange={(event) => setProjectQuery(event.target.value)} placeholder="Project of klant..." />
+                </Field>
+                <Field label="Status">
+                  <select className="field" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as ProjectStatus | 'all')}>
+                    <option value="all">Alle statussen</option>
+                    {Object.entries(statusLabels).map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+            </div>
+
+            <ForecastMatrix
+              days={days}
+              projects={visibleProjects}
+              entries={state.timeEntries}
+              selectedEntryId={entryDraft.id}
+              selectedCell={matrixSelection}
+              onCellSelect={selectProjectDay}
+            />
+
+            {matrixSelection && (
+              <Panel title={`${selectedMatrixProject?.name ?? 'Project'} · ${matrixSelection.date}`}>
+                <EntryList
+                  entries={selectedMatrixEntries}
+                  projects={state.projects}
+                  onEdit={selectEntry}
+                  onDelete={onEntryDelete}
+                  empty="Geen blokken voor deze cel. Het formulier staat klaar voor nieuwe uren."
+                />
+              </Panel>
+            )}
+          </>
+        )}
+
+        {planningView === 'blocks' && (
+          <div className={mode === 'week' ? 'grid min-w-0 gap-2.5 sm:grid-cols-2 lg:grid-cols-4 min-[1380px]:grid-cols-7' : 'grid min-w-0 gap-2.5 sm:grid-cols-2 lg:grid-cols-4 min-[1380px]:grid-cols-7'}>
+            {days.map((day) => {
+              const key = toDateKey(day)
+              const entries = state.timeEntries.filter((entry) => entry.date === key).sort((a, b) => a.startTime.localeCompare(b.startTime))
+              const selectedDay = entryDraft.date === key
+              return (
+                <article
+                  key={key}
+                  onClick={() => selectDay(key)}
+                  className={`app-panel min-w-0 cursor-pointer p-3 transition hover:border-app-blue hover:bg-app-blue/8 xl:min-h-[168px] ${
+                    selectedDay ? 'border-app-blue bg-app-blue/10 shadow-app' : ''
+                  }`}
+                >
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="app-caption text-app-muted">{day.toLocaleDateString('nl-BE', { weekday: 'short' })}</p>
+                      <h3 className="font-display text-xl font-black">{day.getDate()}</h3>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <span className="rounded-md bg-app-blue/16 px-2.5 py-1 text-xs font-bold">{formatHours(entries.reduce((sum, entry) => sum + entry.hours, 0))}</span>
                       <button
-                        key={entry.id}
                         type="button"
-                        className={`w-full rounded-xl border p-2 text-left transition hover:border-app-blue ${
-                          selected ? 'border-app-navy bg-app-navy text-app-paper' : 'border-app-border bg-app-paper'
-                        }`}
+                        className="icon-btn h-8 w-8 bg-app-paper/80"
+                        aria-label={`Tijdblok toevoegen op ${day.toLocaleDateString('nl-BE', { day: 'numeric', month: 'long', year: 'numeric' })}`}
                         onClick={(event) => {
                           event.stopPropagation()
-                          selectEntry(entry)
+                          selectDay(key)
                         }}
                       >
-                        <span className="block truncate text-sm font-bold">{entry.title}</span>
-                        <span className={`mt-1 flex items-center gap-2 text-xs ${selected ? 'text-app-paper/70' : 'text-app-muted'}`}>
-                          <i className="h-2 w-2 rounded-full" style={{ background: project?.color ?? '#86AAC4' }} />
-                          {entry.startTime}-{entry.endTime}
-                        </span>
+                        <Plus size={15} />
                       </button>
-                    )
-                  })}
-                  {entries.length === 0 && (
-                    <div className="rounded-xl border border-dashed border-app-blue/45 bg-app-blue/8 px-3 py-2 text-sm font-bold text-app-navy">
-                      <Plus className="mr-1 inline" size={15} /> Tijdblok
                     </div>
-                  )}
-                </div>
-              </article>
-            )
-          })}
-        </div>
+                  </div>
+                  <div className="space-y-2">
+                    {entries.map((entry) => {
+                      const project = state.projects.find((item) => item.id === entry.projectId)
+                      const selected = entryDraft.id === entry.id
+                      return (
+                        <button
+                          key={entry.id}
+                          type="button"
+                          className={`w-full rounded-lg border p-2 text-left transition hover:border-app-blue ${
+                            selected ? 'border-app-navy bg-app-navy text-app-paper' : 'border-app-border bg-app-paper'
+                          }`}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            selectEntry(entry)
+                          }}
+                        >
+                          <span className="block truncate text-sm font-bold">{entry.title}</span>
+                          <span className={`mt-1 flex items-center gap-2 text-xs ${selected ? 'text-app-paper/70' : 'text-app-muted'}`}>
+                            <i className="h-2 w-2 rounded-full" style={{ background: project?.color ?? '#86AAC4' }} />
+                            {entry.startTime}-{entry.endTime}
+                          </span>
+                        </button>
+                      )
+                    })}
+                    {entries.length === 0 && (
+                      <div className="rounded-lg border border-dashed border-app-blue/45 bg-app-blue/8 px-3 py-2 text-sm font-bold text-app-navy">
+                        <Plus className="mr-1 inline" size={15} /> Tijdblok
+                      </div>
+                    )}
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+        )}
 
         <Panel title="Alle planningblokken">
-          <EntryList entries={state.timeEntries} projects={state.projects} onEdit={(entry) => setEntryDraft(entry)} onDelete={onEntryDelete} empty="Nog geen planningblokken." />
+          <EntryList entries={state.timeEntries} projects={state.projects} onEdit={selectEntry} onDelete={onEntryDelete} empty="Nog geen planningblokken." />
         </Panel>
       </section>
+      </div>
+    </div>
+  )
+}
+
+function ForecastMatrix({
+  days,
+  projects,
+  entries,
+  selectedEntryId,
+  selectedCell,
+  onCellSelect,
+}: {
+  days: Date[]
+  projects: Project[]
+  entries: TimeEntry[]
+  selectedEntryId?: string
+  selectedCell: MatrixSelection
+  onCellSelect: (projectId: string, date: string, entries: TimeEntry[]) => void
+}) {
+  if (projects.length === 0) {
+    return <p className="app-panel p-3.5 text-sm text-app-muted">Geen projecten gevonden voor deze filter.</p>
+  }
+
+  function cellEntries(projectId: string, date: string) {
+    return entries
+      .filter((entry) => entry.projectId === projectId && entry.date === date)
+      .sort((a, b) => a.startTime.localeCompare(b.startTime))
+  }
+
+  function projectHours(projectId: string) {
+    return entries.filter((entry) => entry.projectId === projectId).reduce((sum, entry) => sum + entry.hours, 0)
+  }
+
+  return (
+    <div className="app-panel overflow-hidden">
+      <div className="hidden overflow-x-auto md:block">
+        <table className="w-full min-w-[920px] border-separate border-spacing-0 text-left text-sm">
+          <thead>
+            <tr>
+              <th className="sticky left-0 z-10 w-64 border-b border-app-border bg-app-card px-3 py-2.5">
+                <span className="app-caption text-app-muted">Project</span>
+              </th>
+              {days.map((day) => {
+                const key = toDateKey(day)
+                return (
+                  <th key={key} className="border-b border-app-border bg-app-card px-2 py-2 text-center">
+                    <span className="app-caption block text-app-muted">{day.toLocaleDateString('nl-BE', { weekday: 'short' })}</span>
+                    <strong className="font-display text-lg">{day.getDate()}</strong>
+                  </th>
+                )
+              })}
+            </tr>
+          </thead>
+          <tbody>
+            {projects.map((project) => {
+              const total = projectHours(project.id)
+              return (
+                <tr key={project.id} className="group">
+                  <th className="sticky left-0 z-10 border-b border-app-border bg-app-card px-3 py-3 align-top">
+                    <div className="min-w-0">
+                      <div className="mb-1 flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full" style={{ background: project.color }} />
+                        <span className="rounded-md bg-app-blue/14 px-2 py-0.5 text-xs font-bold">{statusLabels[project.status]}</span>
+                      </div>
+                      <p className="truncate font-bold">{project.name}</p>
+                      <p className="truncate text-xs font-medium text-app-muted">{project.client} · {formatHours(total)} gepland</p>
+                    </div>
+                  </th>
+                  {days.map((day) => {
+                    const key = toDateKey(day)
+                    const items = cellEntries(project.id, key)
+                    const hours = items.reduce((sum, entry) => sum + entry.hours, 0)
+                    const billable = items.some((entry) => entry.billable)
+                    const selected = selectedCell?.projectId === project.id && selectedCell.date === key
+                    const selectedEntry = items.some((entry) => entry.id === selectedEntryId)
+                    return (
+                      <td key={key} className="border-b border-app-border/75 px-1.5 py-2 align-top">
+                        <button
+                          type="button"
+                          className={`min-h-14 w-full rounded-lg border px-2 py-2 text-left transition hover:border-app-blue hover:bg-app-blue/8 ${
+                            selected || selectedEntry
+                              ? 'border-app-navy bg-app-navy text-app-paper shadow-soft'
+                              : items.length
+                                ? 'border-app-border bg-app-paper'
+                                : 'border-dashed border-app-blue/35 bg-app-paper/45 text-app-muted'
+                          }`}
+                          aria-label={`${project.name} ${key} ${items.length ? formatHours(hours) : 'tijdblok toevoegen'}`}
+                          onClick={() => onCellSelect(project.id, key, items)}
+                        >
+                          <span className="flex items-center justify-between gap-1">
+                            <strong className="text-sm">{items.length ? formatHours(hours) : '+'}</strong>
+                            {items.length > 1 && <span className="text-[11px] font-bold opacity-75">{items.length}x</span>}
+                          </span>
+                          {items.length > 0 && (
+                            <span className={`mt-1 flex items-center gap-1 text-[11px] ${selected || selectedEntry ? 'text-app-paper/70' : 'text-app-muted'}`}>
+                              <i className="h-1.5 w-1.5 rounded-full" style={{ background: billable ? project.color : '#D8D0C2' }} />
+                              {items[0]?.startTime}-{items[items.length - 1]?.endTime}
+                            </span>
+                          )}
+                        </button>
+                      </td>
+                    )
+                  })}
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="grid gap-3 p-3 md:hidden">
+        {projects.map((project) => {
+          const total = projectHours(project.id)
+          return (
+            <article key={project.id} className="rounded-lg border border-app-border bg-app-card/72 p-3">
+              <div className="mb-3 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="mb-1 flex items-center gap-2">
+                    <span className="h-2.5 w-2.5 rounded-full" style={{ background: project.color }} />
+                    <span className="rounded-md bg-app-blue/14 px-2 py-0.5 text-xs font-bold">{statusLabels[project.status]}</span>
+                  </div>
+                  <h3 className="truncate font-bold">{project.name}</h3>
+                  <p className="text-xs text-app-muted">{project.client} · {formatHours(total)} gepland</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {days.map((day) => {
+                  const key = toDateKey(day)
+                  const items = cellEntries(project.id, key)
+                  const hours = items.reduce((sum, entry) => sum + entry.hours, 0)
+                  const selected = selectedCell?.projectId === project.id && selectedCell.date === key
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      className={`rounded-lg border px-2 py-2 text-left transition ${
+                        selected ? 'border-app-navy bg-app-navy text-app-paper' : items.length ? 'border-app-border bg-app-paper' : 'border-dashed border-app-blue/35 bg-app-paper/45'
+                      }`}
+                      aria-label={`${project.name} ${key} ${items.length ? formatHours(hours) : 'tijdblok toevoegen'}`}
+                      onClick={() => onCellSelect(project.id, key, items)}
+                    >
+                      <span className={`app-caption block ${selected ? 'text-app-paper/62' : 'text-app-muted'}`}>{day.toLocaleDateString('nl-BE', { weekday: 'short' })} {day.getDate()}</span>
+                      <strong className="mt-1 block">{items.length ? formatHours(hours) : '+ Tijdblok'}</strong>
+                    </button>
+                  )
+                })}
+              </div>
+            </article>
+          )
+        })}
       </div>
     </div>
   )
@@ -554,8 +796,8 @@ function Projects({ state, onSave, onDelete }: { state: PlanState; onSave: (proj
   }
 
   return (
-    <div className="space-y-5">
-      <div className="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
+    <div className="space-y-4">
+      <div className="grid gap-4 xl:grid-cols-[350px_minmax(0,1fr)]">
         <div className="order-2 xl:order-1">
         <Panel title={draft.id ? 'Project bijwerken' : 'Project toevoegen'}>
           <form onSubmit={submitProject} className="space-y-3">
@@ -598,20 +840,20 @@ function Projects({ state, onSave, onDelete }: { state: PlanState; onSave: (proj
         </Panel>
         </div>
 
-      <section className="order-1 grid gap-3 lg:grid-cols-2 xl:order-2">
+      <section className="order-1 grid gap-2.5 lg:grid-cols-2 xl:order-2">
         {state.projects.map((project) => {
           const entries = state.timeEntries.filter((entry) => entry.projectId === project.id)
           const hours = entries.reduce((sum, entry) => sum + entry.hours, 0)
           const pct = project.estimatedHours ? Math.min(100, (hours / project.estimatedHours) * 100) : 0
           return (
-            <article key={project.id} className="app-panel rounded-2xl p-4">
+            <article key={project.id} className="app-panel p-3.5">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="mb-2 flex items-center gap-2">
                     <span className="h-3 w-3 rounded-full" style={{ background: project.color }} />
-                    <span className="rounded-full bg-app-blue/16 px-2.5 py-1 text-xs font-bold">{statusLabels[project.status]}</span>
+                    <span className="rounded-md bg-app-blue/16 px-2.5 py-1 text-xs font-bold">{statusLabels[project.status]}</span>
                   </div>
-                  <h3 className="truncate font-display text-xl font-black tracking-normal">{project.name}</h3>
+                  <h3 className="truncate font-display text-lg font-black tracking-normal">{project.name}</h3>
                   <p className="text-sm text-app-muted">{project.client} · {typeLabels[project.type]}</p>
                 </div>
                 <div className="flex gap-1">
@@ -619,15 +861,15 @@ function Projects({ state, onSave, onDelete }: { state: PlanState; onSave: (proj
                   <button className="icon-btn text-red-700" onClick={() => onDelete(project.id)} aria-label={`Verwijder ${project.name}`}><Trash2 size={16} /></button>
                 </div>
               </div>
-              <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
+              <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
                 <MiniMetric label="Gepland" value={formatHours(hours)} light />
                 <MiniMetric label="Estimate" value={formatHours(project.estimatedHours)} light />
                 <MiniMetric label="Waarde" value={formatCurrency(projectRevenue(project, hours))} light />
               </div>
-              <div className="mt-4 h-2 rounded-full bg-app-paper">
+              <div className="mt-3 h-1.5 rounded-full bg-app-paper">
                 <div className="h-full rounded-full bg-app-blue" style={{ width: `${pct}%` }} />
               </div>
-              <div className="mt-3 flex items-center justify-between gap-3 text-sm text-app-muted">
+              <div className="mt-2 flex items-center justify-between gap-3 text-sm text-app-muted">
                 <span>Deadline: {project.deadline || 'niet gezet'}</span>
                 <span className="font-bold text-app-navy">{Math.round(pct)}%</span>
               </div>
@@ -658,38 +900,38 @@ function Reports({ state }: { state: PlanState }) {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <section className="grid gap-3 sm:grid-cols-3">
         <MetricCard icon={Clock3} label="Alle uren" value={formatHours(rows.reduce((sum, row) => sum + row.hours, 0))} helper="planning totaal" />
         <MetricCard icon={CheckCircle2} label="Factureerbaar" value={formatHours(rows.reduce((sum, row) => sum + row.billable, 0))} helper="uren met facturatie" />
         <MetricCard icon={BarChart3} label="Omzet" value={formatCurrency(totalRevenue)} helper="indicatief" />
       </section>
       <Panel title="Projectrapport">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-          <p className="max-w-xl text-sm leading-relaxed text-app-muted">Een compacte exportklare tabel met uren, factureerbare tijd en indicatieve projectwaarde.</p>
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+          <p className="max-w-xl text-sm leading-relaxed text-app-muted">Uren, factureerbare tijd en indicatieve projectwaarde.</p>
           <button className="btn-secondary" onClick={exportCsv}><Download size={17} /> CSV export</button>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-left text-sm">
-            <thead className="border-b border-app-border text-xs uppercase tracking-[0.12em] text-app-muted">
+          <table className="app-table w-full min-w-[720px] text-left text-sm">
+            <thead className="text-xs uppercase tracking-[0.12em] text-app-muted">
               <tr>
-                <th className="py-3">Project</th>
-                <th>Status</th>
-                <th>Type</th>
-                <th className="text-right">Uren</th>
-                <th className="text-right">Fact.</th>
-                <th className="text-right">Waarde</th>
+                <th className="px-3 py-2.5">Project</th>
+                <th className="px-3 py-2.5">Status</th>
+                <th className="px-3 py-2.5">Type</th>
+                <th className="px-3 py-2.5 text-right">Uren</th>
+                <th className="px-3 py-2.5 text-right">Fact.</th>
+                <th className="px-3 py-2.5 text-right">Waarde</th>
               </tr>
             </thead>
             <tbody>
               {rows.map((row) => (
                 <tr key={row.project.id} className="border-b border-app-border/70 transition hover:bg-app-paper/60">
-                  <td className="py-3 font-bold">{row.project.name}<span className="block text-xs font-medium text-app-muted">{row.project.client}</span></td>
-                  <td><span className="rounded-full bg-app-blue/16 px-2.5 py-1 text-xs font-bold">{statusLabels[row.project.status]}</span></td>
-                  <td>{typeLabels[row.project.type]}</td>
-                  <td className="text-right">{formatHours(row.hours)}</td>
-                  <td className="text-right">{formatHours(row.billable)}</td>
-                  <td className="text-right font-bold">{formatCurrency(row.revenue)}</td>
+                  <td className="px-3 py-3 font-bold">{row.project.name}<span className="block text-xs font-medium text-app-muted">{row.project.client}</span></td>
+                  <td className="px-3 py-3"><span className="rounded-md bg-app-blue/16 px-2.5 py-1 text-xs font-bold">{statusLabels[row.project.status]}</span></td>
+                  <td className="px-3 py-3">{typeLabels[row.project.type]}</td>
+                  <td className="px-3 py-3 text-right">{formatHours(row.hours)}</td>
+                  <td className="px-3 py-3 text-right">{formatHours(row.billable)}</td>
+                  <td className="px-3 py-3 text-right font-bold">{formatCurrency(row.revenue)}</td>
                 </tr>
               ))}
             </tbody>
@@ -728,11 +970,11 @@ function DataSettings({
   }
 
   return (
-    <div className="space-y-5">
-      <div className="grid gap-5 lg:grid-cols-3">
+    <div className="space-y-4">
+      <div className="grid gap-3 lg:grid-cols-3">
         <Panel title="Export en import">
           <div className="space-y-3 text-sm text-app-muted">
-            <p>Neem een volledige JSON-kopie mee of importeer bestaande Plan-data naar deze werkruimte.</p>
+            <p>Maak een JSON-kopie of zet bestaande Plan-data terug.</p>
             <div className="grid gap-3">
               <button className="btn-secondary justify-start" onClick={exportJson}><FileJson size={18} /> JSON exporteren</button>
               <button className="btn-secondary justify-start" onClick={() => inputRef.current?.click()}><Upload size={18} /> JSON importeren</button>
@@ -748,7 +990,7 @@ function DataSettings({
         </Panel>
         <Panel title="Demo data">
           <div className="space-y-3 text-sm text-app-muted">
-            <p>Herstel de voorbeeldprojecten en planningblokken wanneer je opnieuw met een zuivere demo wilt testen.</p>
+            <p>Herstel voorbeeldprojecten en planningblokken.</p>
             <button className="btn-secondary justify-start border-red-200 text-red-800 hover:bg-red-50" onClick={onRestoreDemo}>
               <RefreshCcw size={18} /> Demo data herstellen
             </button>
@@ -756,7 +998,7 @@ function DataSettings({
         </Panel>
         <Panel title="Opslag en sessie">
           <div className="space-y-3 text-sm text-app-muted">
-            <p>Postgres wordt enkel via server-side Next.js acties aangesproken; de databaseverbinding blijft buiten de browser.</p>
+            <p>Postgres loopt via server-side Next.js acties.</p>
             <p><strong className="text-app-navy">{state.projects.length}</strong> projecten en <strong className="text-app-navy">{state.timeEntries.length}</strong> planningblokken actief voor {userEmail}.</p>
             <form action={logoutAction}>
               <button className="btn-secondary justify-start"><LogOut size={18} /> Uitloggen</button>
@@ -770,8 +1012,8 @@ function DataSettings({
 
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="app-panel rounded-2xl p-4">
-      <h2 className="mb-4 font-display text-xl font-black tracking-normal">{title}</h2>
+    <section className="app-panel p-3.5">
+      <h2 className="mb-3 font-display text-lg font-black tracking-normal">{title}</h2>
       {children}
     </section>
   )
@@ -788,12 +1030,12 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 
 function MetricCard({ icon: Icon, label, value, helper }: { icon: typeof Clock3; label: string; value: string; helper: string }) {
   return (
-    <article className="app-panel rounded-2xl p-4">
-      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-app-blue/18 text-app-navy">
-        <Icon size={20} />
+    <article className="app-panel p-3.5">
+      <div className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg bg-app-blue/18 text-app-navy">
+        <Icon size={17} />
       </div>
       <p className="app-caption text-app-muted">{label}</p>
-      <strong className="mt-1 block font-display text-3xl font-black tracking-normal">{value}</strong>
+      <strong className="mt-1 block font-display text-2xl font-black tracking-normal">{value}</strong>
       <p className="mt-1 text-xs text-app-muted">{helper}</p>
     </article>
   )
@@ -801,7 +1043,7 @@ function MetricCard({ icon: Icon, label, value, helper }: { icon: typeof Clock3;
 
 function MiniMetric({ label, value, light = false }: { label: string; value: string; light?: boolean }) {
   return (
-    <div className={`min-w-0 rounded-xl border p-3 ${light ? 'border-app-border bg-app-paper/72' : 'border-app-paper/14 bg-white/7'}`}>
+    <div className={`min-w-0 rounded-lg border p-2.5 ${light ? 'border-app-border bg-app-paper/72' : 'border-app-paper/14 bg-white/7'}`}>
       <p className={`truncate text-xs font-bold ${light ? 'text-app-muted' : 'text-app-paper/62'}`}>{label}</p>
       <strong className="mt-1 block truncate font-display text-base font-black tracking-normal md:text-lg">{value}</strong>
     </div>
@@ -827,7 +1069,7 @@ function EntryList({
       {[...entries].sort((a, b) => `${a.date}${a.startTime}`.localeCompare(`${b.date}${b.startTime}`)).map((entry) => {
         const project = projects.find((item) => item.id === entry.projectId)
         return (
-          <div key={entry.id} className="flex items-center justify-between gap-3 rounded-xl border border-app-border bg-app-paper/70 p-3">
+          <div key={entry.id} className="app-row flex items-center justify-between gap-3 p-2.5">
             <div className="min-w-0">
               <p className="truncate font-bold">{entry.title}</p>
               <p className="flex flex-wrap items-center gap-2 text-sm text-app-muted">
