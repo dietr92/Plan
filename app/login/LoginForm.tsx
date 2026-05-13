@@ -12,8 +12,8 @@ export default function LoginForm() {
     <form action={formAction} className="space-y-5">
       {state.error && <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-800">{state.error}</div>}
       <label className="block text-sm font-bold text-app-navy">
-        <span className="mb-2 block text-sm font-extrabold">E-mail</span>
-        <input className="field" type="email" name="email" autoComplete="email" required />
+        <span className="mb-2 block text-sm font-extrabold">Gebruiker</span>
+        <input className="field" type="text" name="email" autoComplete="username" placeholder="demo" required />
       </label>
       <label className="block text-sm font-bold text-app-navy">
         <span className="mb-2 block text-sm font-extrabold">Wachtwoord</span>

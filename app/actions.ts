@@ -40,7 +40,7 @@ export async function loginAction(_previousState: { error: string }, formData: F
   const email = String(formData.get('email') ?? '')
   const password = String(formData.get('password') ?? '')
 
-  if (!email || !password) return { error: 'Vul e-mail en wachtwoord in.' }
+  if (!email || !password) return { error: 'Vul gebruiker en wachtwoord in.' }
 
   const user = await verifyLogin(email, password)
   if (!user) return { error: 'Ongeldige login.' }
