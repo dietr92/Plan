@@ -3,12 +3,12 @@
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import type { PlanState, Project, ProjectStatus, ProjectType, TimeEntry } from '@/src/types'
-import { seedState } from '@/src/demo-data'
 import { createSession, destroySession, requireUser, verifyLogin } from '@/src/lib/auth'
 import {
   deleteProject,
   deleteTimeEntry,
   replacePlanState,
+  restoreDemoState,
   upsertProject,
   upsertTimeEntry,
 } from '@/src/lib/db/queries'
@@ -94,7 +94,7 @@ export async function replaceStateAction(state: PlanState) {
 
 export async function restoreDemoDataAction() {
   const user = await requireUser()
-  const state = await replacePlanState(user.id, seedState)
+  const state = await restoreDemoState(user.id)
   revalidatePath('/')
   return state
 }

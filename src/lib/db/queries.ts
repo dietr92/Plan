@@ -8,6 +8,22 @@ function workspaceIdForUser(userId: string) {
   return `workspace-${userId}`
 }
 
+function namespacedSeedState(workspaceId: string): PlanState {
+  const projectIdMap = new Map(seedState.projects.map((project) => [project.id, `${workspaceId}-${project.id}`]))
+
+  return {
+    projects: seedState.projects.map((project) => ({
+      ...project,
+      id: projectIdMap.get(project.id) ?? `${workspaceId}-${project.id}`,
+    })),
+    timeEntries: seedState.timeEntries.map((entry) => ({
+      ...entry,
+      id: `${workspaceId}-${entry.id}`,
+      projectId: projectIdMap.get(entry.projectId) ?? `${workspaceId}-${entry.projectId}`,
+    })),
+  }
+}
+
 function toProject(row: typeof projects.$inferSelect): Project {
   return {
     id: row.id,
@@ -59,10 +75,12 @@ async function seedWorkspaceIfEmpty(workspaceId: string) {
   const existing = await db.select({ id: projects.id }).from(projects).where(eq(projects.workspaceId, workspaceId)).limit(1)
   if (existing.length > 0) return
 
+  const workspaceSeedState = namespacedSeedState(workspaceId)
+
   await db.transaction(async (tx) => {
-    if (seedState.projects.length) {
+    if (workspaceSeedState.projects.length) {
       await tx.insert(projects).values(
-        seedState.projects.map((project) => ({
+        workspaceSeedState.projects.map((project) => ({
           ...project,
           workspaceId,
           createdAt: new Date(project.createdAt),
@@ -71,8 +89,8 @@ async function seedWorkspaceIfEmpty(workspaceId: string) {
       )
     }
 
-    if (seedState.timeEntries.length) {
-      await tx.insert(timeEntries).values(seedState.timeEntries.map((entry) => ({ ...entry, workspaceId })))
+    if (workspaceSeedState.timeEntries.length) {
+      await tx.insert(timeEntries).values(workspaceSeedState.timeEntries.map((entry) => ({ ...entry, workspaceId })))
     }
   })
 }
@@ -190,4 +208,9 @@ export async function replacePlanState(userId: string, state: PlanState) {
   })
 
   return getPlanState(userId)
+}
+
+export async function restoreDemoState(userId: string) {
+  const workspaceId = workspaceIdForUser(userId)
+  return replacePlanState(userId, namespacedSeedState(workspaceId))
 }
