@@ -47,6 +47,22 @@ export default async function LoginPage() {
               Gebruik je Plan demo-account.
             </p>
           </div>
+          <div
+            className="mb-6 rounded-lg border border-app-navy/12 bg-app-sky/12 p-4 text-app-navy"
+            aria-label="Demo login gegevens"
+          >
+            <p className="mb-3 text-xs font-black uppercase tracking-[0.08em] text-app-muted">
+              Demo login
+            </p>
+            <dl className="grid grid-cols-[minmax(88px,0.42fr)_minmax(0,1fr)] gap-x-3 gap-y-1 text-sm">
+              <dt className="font-bold text-app-muted">Gebruiker</dt>
+              <dd className="min-w-0 font-extrabold">demo</dd>
+              <dt className="font-bold text-app-muted">Wachtwoord</dt>
+              <dd className="min-w-0 break-words font-extrabold">
+                PlanMetGoesting!
+              </dd>
+            </dl>
+          </div>
           <LoginForm />
 
           <div className="mt-6 grid grid-cols-3 gap-2 text-center text-xs font-bold text-app-muted">
