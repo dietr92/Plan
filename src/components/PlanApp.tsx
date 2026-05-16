@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState, useTransition } from 'react'
 import type { FormEvent, ReactNode } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import {
   BarChart3,
   CalendarDays,
@@ -65,6 +66,22 @@ const screenEyebrows: Record<Screen, string> = {
   settings: 'Beheer',
 }
 
+const screenPaths: Record<Screen, string> = {
+  dashboard: '/',
+  planning: '/planning',
+  projects: '/projects',
+  reports: '/reports',
+  settings: '/data',
+}
+
+const pathScreens: Record<string, Screen> = {
+  '/': 'dashboard',
+  '/planning': 'planning',
+  '/projects': 'projects',
+  '/reports': 'reports',
+  '/data': 'settings',
+}
+
 const defaultEntry = (projectId = '', date = todayKey()): Omit<TimeEntry, 'id'> => ({
   projectId,
   title: '',
@@ -83,13 +100,15 @@ function makeId(prefix: string) {
   return `${prefix}-${crypto.randomUUID()}`
 }
 
-function App({ initialState, userEmail }: { initialState: PlanState; userEmail: string }) {
+function App({ initialState, userEmail, initialScreen = 'dashboard' }: { initialState: PlanState; userEmail: string; initialScreen?: Screen }) {
+  const router = useRouter()
+  const pathname = usePathname()
   const [state, setState] = useState<PlanState>(initialState)
-  const [screen, setScreen] = useState<Screen>('dashboard')
   const [menuOpen, setMenuOpen] = useState(false)
   const [error, setError] = useState('')
   const [isPending, startTransition] = useTransition()
 
+  const screen = pathScreens[pathname] ?? initialScreen
   const metrics = useMemo(() => getMetrics(state), [state])
 
   function runMutation(action: () => Promise<PlanState>) {
@@ -139,8 +158,8 @@ function App({ initialState, userEmail }: { initialState: PlanState; userEmail: 
   }
 
   function changeScreen(next: Screen) {
-    setScreen(next)
     setMenuOpen(false)
+    router.push(screenPaths[next])
   }
 
   return (
@@ -890,10 +909,15 @@ function Reports({ state }: { state: PlanState }) {
   })
   const totalRevenue = rows.reduce((sum, row) => sum + row.revenue, 0)
 
+  function csvValue(value: string | number) {
+    const text = String(value)
+    return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text
+  }
+
   function exportCsv() {
     const csv = [
       'project,client,status,type,hours,billable_hours,revenue',
-      ...rows.map((row) => [row.project.name, row.project.client, row.project.status, row.project.type, row.hours, row.billable, row.revenue].join(',')),
+      ...rows.map((row) => [row.project.name, row.project.client, row.project.status, row.project.type, row.hours, row.billable, row.revenue].map(csvValue).join(',')),
     ].join('\n')
     downloadFile('plan-report.csv', csv, 'text/csv;charset=utf-8')
   }

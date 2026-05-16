@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm'
-import { seedState } from '../../demo-data'
+import { buildDemoState } from '../../demo-data'
 import type { PlanState, Project, TimeEntry } from '../../types'
 import { db } from './client'
 import { projects, timeEntries, workspaceMembers, workspaces } from './schema'
@@ -8,15 +8,15 @@ function workspaceIdForUser(userId: string) {
   return `workspace-${userId}`
 }
 
-function namespacedSeedState(workspaceId: string): PlanState {
-  const projectIdMap = new Map(seedState.projects.map((project) => [project.id, `${workspaceId}-${project.id}`]))
+function namespacedSeedState(workspaceId: string, state = buildDemoState()): PlanState {
+  const projectIdMap = new Map(state.projects.map((project) => [project.id, `${workspaceId}-${project.id}`]))
 
   return {
-    projects: seedState.projects.map((project) => ({
+    projects: state.projects.map((project) => ({
       ...project,
       id: projectIdMap.get(project.id) ?? `${workspaceId}-${project.id}`,
     })),
-    timeEntries: seedState.timeEntries.map((entry) => ({
+    timeEntries: state.timeEntries.map((entry) => ({
       ...entry,
       id: `${workspaceId}-${entry.id}`,
       projectId: projectIdMap.get(entry.projectId) ?? `${workspaceId}-${entry.projectId}`,
@@ -212,5 +212,5 @@ export async function replacePlanState(userId: string, state: PlanState) {
 
 export async function restoreDemoState(userId: string) {
   const workspaceId = workspaceIdForUser(userId)
-  return replacePlanState(userId, namespacedSeedState(workspaceId))
+  return replacePlanState(userId, namespacedSeedState(workspaceId, buildDemoState()))
 }
