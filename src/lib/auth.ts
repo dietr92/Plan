@@ -63,7 +63,6 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     .limit(1)
 
   if (!row) {
-    cookieStore.delete(SESSION_COOKIE)
     return null
   }
 
